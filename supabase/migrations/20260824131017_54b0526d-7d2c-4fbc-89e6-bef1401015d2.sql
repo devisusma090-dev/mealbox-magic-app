@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.purge_old_orders() TO service_role;
