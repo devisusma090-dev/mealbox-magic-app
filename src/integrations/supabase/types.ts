@@ -14,13 +14,290 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      addons: {
+        Row: {
+          available: boolean
+          created_at: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          available?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          available?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          discount_amount: number
+          discount_percent: number
+          id: string
+          min_order: number
+          note: string | null
+          owner_user_id: string | null
+          used: boolean
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          discount_amount?: number
+          discount_percent?: number
+          id?: string
+          min_order?: number
+          note?: string | null
+          owner_user_id?: string | null
+          used?: boolean
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          discount_amount?: number
+          discount_percent?: number
+          id?: string
+          min_order?: number
+          note?: string | null
+          owner_user_id?: string | null
+          used?: boolean
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          available: boolean
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_veg: boolean
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          available?: boolean
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_veg?: boolean
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          available?: boolean
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_veg?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address: string | null
+          coupon_code: string | null
+          created_at: string
+          customer_name: string | null
+          delivery_fee: number
+          delivery_otp: string
+          discount: number
+          flat: string | null
+          id: string
+          items: Json
+          mode: string
+          phone: string | null
+          status: string
+          subtotal: number
+          table_no: string | null
+          total: number
+          tower: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          customer_name?: string | null
+          delivery_fee?: number
+          delivery_otp: string
+          discount?: number
+          flat?: string | null
+          id?: string
+          items?: Json
+          mode?: string
+          phone?: string | null
+          status?: string
+          subtotal?: number
+          table_no?: string | null
+          total?: number
+          tower?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          customer_name?: string | null
+          delivery_fee?: number
+          delivery_otp?: string
+          discount?: number
+          flat?: string | null
+          id?: string
+          items?: Json
+          mode?: string
+          phone?: string | null
+          status?: string
+          subtotal?: number
+          table_no?: string | null
+          total?: number
+          tower?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          referral_code: string
+          referral_rewarded: boolean
+          referred_by: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          referral_code: string
+          referral_rewarded?: boolean
+          referred_by?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          referral_code?: string
+          referral_rewarded?: boolean
+          referred_by?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          catering_text: string
+          contact_phone: string
+          delivery_fee: number
+          id: number
+          offline_reason: string
+          referral_amount: number
+          restaurant_open: boolean
+          updated_at: string
+          upi_id: string | null
+          upi_qr_url: string | null
+          whatsapp_phone: string
+          zomato_url: string | null
+        }
+        Insert: {
+          catering_text?: string
+          contact_phone?: string
+          delivery_fee?: number
+          id?: number
+          offline_reason?: string
+          referral_amount?: number
+          restaurant_open?: boolean
+          updated_at?: string
+          upi_id?: string | null
+          upi_qr_url?: string | null
+          whatsapp_phone?: string
+          zomato_url?: string | null
+        }
+        Update: {
+          catering_text?: string
+          contact_phone?: string
+          delivery_fee?: number
+          id?: number
+          offline_reason?: string
+          referral_amount?: number
+          restaurant_open?: boolean
+          updated_at?: string
+          upi_id?: string | null
+          upi_qr_url?: string | null
+          whatsapp_phone?: string
+          zomato_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      purge_old_orders: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
