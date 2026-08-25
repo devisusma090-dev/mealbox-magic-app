@@ -37,6 +37,11 @@ export type Settings = {
   upi_id: string | null;
   zomato_url: string | null;
   catering_text: string;
+  direct_delivery_enabled: boolean;
+  direct_offline_reason: string;
+  eden_enabled: boolean;
+  eden_offline_reason: string;
+  delivery_staff_phones: string;
 };
 
 export type Coupon = {
