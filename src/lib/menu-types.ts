@@ -76,6 +76,8 @@ export type OrderRow = {
   delivery_otp: string;
   status: string;
   created_at: string;
+  delivery_phone?: string | null;
+  completed_at?: string | null;
 };
 
 export type CartLine = {
