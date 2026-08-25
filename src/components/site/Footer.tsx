@@ -2,18 +2,29 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Bike, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminLogin } from "@/lib/admin.functions";
 import { ADMIN_PASSCODE_KEY } from "@/lib/admin-session";
+import { DeliveryPortal } from "@/components/site/DeliveryPortal";
+
+type View = "choose" | "admin" | "delivery";
 
 export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomatoUrl?: string | null | undefined }) {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<View>("choose");
   const [passcode, setPasscode] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const login = useServerFn(adminLogin);
+
+  const openModal = () => {
+    setView("choose");
+    setPasscode("");
+    setOpen(true);
+  };
 
   const submit = async () => {
     setBusy(true);
@@ -55,7 +66,7 @@ export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomat
         </div>
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={openModal}
           className="mt-2 cursor-default text-xs text-muted-foreground"
           aria-label="Mealbox91 copyright"
         >
@@ -64,21 +75,59 @@ export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomat
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Staff access</DialogTitle>
+            <DialogTitle>
+              {view === "choose" ? "Staff access" : view === "admin" ? "Admin panel" : "Delivery portal"}
+            </DialogTitle>
           </DialogHeader>
-          <Input
-            type="password"
-            autoFocus
-            placeholder="Passcode"
-            value={passcode}
-            onChange={(e) => setPasscode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-          <Button onClick={submit} disabled={busy || !passcode}>
-            {busy ? "Checking…" : "Enter admin panel"}
-          </Button>
+
+          {view === "choose" && (
+            <div className="grid gap-3">
+              <Button variant="outline" className="h-auto justify-start py-4" onClick={() => setView("admin")}>
+                <ShieldCheck className="size-5" />
+                <span className="text-left">
+                  <span className="block font-semibold">Admin Panel</span>
+                  <span className="block text-xs text-muted-foreground">Menu, settings, sales</span>
+                </span>
+              </Button>
+              <Button variant="outline" className="h-auto justify-start py-4" onClick={() => setView("delivery")}>
+                <Bike className="size-5" />
+                <span className="text-left">
+                  <span className="block font-semibold">Delivery Portal</span>
+                  <span className="block text-xs text-muted-foreground">Live queue & OTP completion</span>
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {view === "admin" && (
+            <div className="space-y-3">
+              <Input
+                type="password"
+                autoFocus
+                placeholder="Passcode"
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
+              />
+              <Button className="w-full" onClick={submit} disabled={busy || !passcode}>
+                {busy ? "Checking…" : "Enter admin panel"}
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setView("choose")}>
+                Back
+              </Button>
+            </div>
+          )}
+
+          {view === "delivery" && (
+            <div className="space-y-3">
+              <DeliveryPortal />
+              <Button variant="ghost" className="w-full" onClick={() => setView("choose")}>
+                Back
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </footer>
