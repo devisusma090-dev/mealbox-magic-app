@@ -83,7 +83,7 @@ function CheckoutPage() {
           phone,
           address,
           name: user?.user_metadata?.["full_name"] ?? user?.email ?? "",
-          couponCode: coupon?.code,
+          couponCode: coupon?.code ?? "",
           lines: lines.map((l) => ({ id: l.id, kind: l.kind, qty: l.qty, note: l.note })),
         },
       });
