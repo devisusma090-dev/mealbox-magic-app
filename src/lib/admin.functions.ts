@@ -13,7 +13,7 @@ export const adminLoadAll = createServerFn({ method: "POST" })
   .inputValidator((input: { passcode: string }) => ({ passcode: String(input.passcode ?? "") }))
   .handler(async ({ data }) => {
     const db = await adminDb(data.passcode);
-    await db.rpc("purge_old_orders").catch(() => undefined);
+    try { await db.rpc("purge_old_orders"); } catch { /* ignore */ }
     const [categories, items, addons, coupons, settings, orders] = await Promise.all([
       db.from("categories").select("*").order("sort_order"),
       db.from("menu_items").select("*").order("sort_order"),
@@ -42,7 +42,7 @@ export const adminUpsert = createServerFn({ method: "POST" })
     const allowed = ["categories", "menu_items", "addons", "coupons", "settings"];
     if (!allowed.includes(data.table)) throw new Error("Unknown table");
     const db = await adminDb(data.passcode);
-    const { error } = await db.from(data.table).upsert(data.row as never);
+    const { error } = await db.from(data.table as "categories").upsert(data.row as never);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -57,7 +57,7 @@ export const adminDelete = createServerFn({ method: "POST" })
     const allowed = ["categories", "menu_items", "addons", "coupons"];
     if (!allowed.includes(data.table)) throw new Error("Unknown table");
     const db = await adminDb(data.passcode);
-    const { error } = await db.from(data.table).delete().eq("id", data.id);
+    const { error } = await db.from(data.table as "categories").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

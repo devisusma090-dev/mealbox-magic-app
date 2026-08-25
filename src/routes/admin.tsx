@@ -207,7 +207,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                         { name: "name", value: c.name },
                         { name: "sort_order", value: String(c.sort_order), type: "number", width: "w-24" },
                       ]}
-                      onSave={(v) => save("categories", { id: c.id, name: v.name, sort_order: Number(v.sort_order) })}
+                      onSave={(v) => save("categories", { id: c.id, name: v['name'], sort_order: Number(v['sort_order']) })}
                       onDelete={() => del("categories", c.id)}
                     />
                   ))}
@@ -218,7 +218,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                       { name: "name", value: "" },
                       { name: "sort_order", value: "0", type: "number", width: "w-24" },
                     ]}
-                    onSave={(v) => save("categories", { name: v.name, sort_order: Number(v.sort_order) })}
+                    onSave={(v) => save("categories", { name: v['name'], sort_order: Number(v['sort_order']) })}
                   />
                 </CardContent>
               </Card>
@@ -257,7 +257,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                         { name: "sort_order", value: String(a.sort_order), type: "number", width: "w-20" },
                       ]}
                       toggle={{ label: "Available", value: a.available }}
-                      onSave={(v, t) => save("addons", { id: a.id, name: v.name, price: Number(v.price), sort_order: Number(v.sort_order), available: t })}
+                      onSave={(v, t) => save("addons", { id: a.id, name: v['name'], price: Number(v['price']), sort_order: Number(v['sort_order']), available: t })}
                       onDelete={() => del("addons", a.id)}
                     />
                   ))}
@@ -270,7 +270,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                       { name: "sort_order", value: "0", type: "number", width: "w-20" },
                     ]}
                     toggle={{ label: "Available", value: true }}
-                    onSave={(v, t) => save("addons", { name: v.name, price: Number(v.price), sort_order: Number(v.sort_order), available: t })}
+                    onSave={(v, t) => save("addons", { name: v['name'], price: Number(v['price']), sort_order: Number(v['sort_order']), available: t })}
                   />
                 </CardContent>
               </Card>

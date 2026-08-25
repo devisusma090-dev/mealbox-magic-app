@@ -147,7 +147,7 @@ function MenuPage() {
         )}
       </main>
 
-      <Footer phone={settings?.contact_phone} zomatoUrl={settings?.zomato_url} />
+      <Footer {...({} as object)} phone={settings?.contact_phone} zomatoUrl={settings?.zomato_url} />
 
       {count > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 p-3 backdrop-blur">
