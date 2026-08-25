@@ -2,6 +2,7 @@ export type Category = {
   id: string;
   name: string;
   sort_order: number;
+  chef_phone?: string | null;
 };
 
 export type MenuItem = {
