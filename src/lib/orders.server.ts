@@ -40,6 +40,12 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
   const { data: settings } = await db.from("settings").select("*").eq("id", 1).single();
   if (!settings) throw new Error("Store settings unavailable.");
   if (!settings.restaurant_open) throw new Error(settings.offline_reason || "Restaurant is currently closed.");
+  if (input.mode === "direct" && settings.direct_delivery_enabled === false) {
+    throw new Error(settings.direct_offline_reason || "Direct delivery is paused right now.");
+  }
+  if (input.mode === "eden" && settings.eden_enabled === false) {
+    throw new Error(settings.eden_offline_reason || "Eden Court delivery is paused right now.");
+  }
 
   const itemIds = input.lines.filter((l) => l.kind === "item").map((l) => l.id);
   const addonIds = input.lines.filter((l) => l.kind === "addon").map((l) => l.id);
