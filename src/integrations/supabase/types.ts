@@ -43,18 +43,21 @@ export type Database = {
       }
       categories: {
         Row: {
+          chef_phone: string | null
           created_at: string
           id: string
           name: string
           sort_order: number
         }
         Insert: {
+          chef_phone?: string | null
           created_at?: string
           id?: string
           name: string
           sort_order?: number
         }
         Update: {
+          chef_phone?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -151,11 +154,13 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          completed_at: string | null
           coupon_code: string | null
           created_at: string
           customer_name: string | null
           delivery_fee: number
           delivery_otp: string
+          delivery_phone: string | null
           discount: number
           flat: string | null
           id: string
@@ -171,11 +176,13 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          completed_at?: string | null
           coupon_code?: string | null
           created_at?: string
           customer_name?: string | null
           delivery_fee?: number
           delivery_otp: string
+          delivery_phone?: string | null
           discount?: number
           flat?: string | null
           id?: string
@@ -191,11 +198,13 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          completed_at?: string | null
           coupon_code?: string | null
           created_at?: string
           customer_name?: string | null
           delivery_fee?: number
           delivery_otp?: string
+          delivery_phone?: string | null
           discount?: number
           flat?: string | null
           id?: string
@@ -252,6 +261,11 @@ export type Database = {
           catering_text: string
           contact_phone: string
           delivery_fee: number
+          delivery_staff_phones: string
+          direct_delivery_enabled: boolean
+          direct_offline_reason: string
+          eden_enabled: boolean
+          eden_offline_reason: string
           id: number
           offline_reason: string
           referral_amount: number
@@ -266,6 +280,11 @@ export type Database = {
           catering_text?: string
           contact_phone?: string
           delivery_fee?: number
+          delivery_staff_phones?: string
+          direct_delivery_enabled?: boolean
+          direct_offline_reason?: string
+          eden_enabled?: boolean
+          eden_offline_reason?: string
           id?: number
           offline_reason?: string
           referral_amount?: number
@@ -280,6 +299,11 @@ export type Database = {
           catering_text?: string
           contact_phone?: string
           delivery_fee?: number
+          delivery_staff_phones?: string
+          direct_delivery_enabled?: boolean
+          direct_offline_reason?: string
+          eden_enabled?: boolean
+          eden_offline_reason?: string
           id?: number
           offline_reason?: string
           referral_amount?: number

@@ -2,6 +2,7 @@ export type Category = {
   id: string;
   name: string;
   sort_order: number;
+  chef_phone?: string | null;
 };
 
 export type MenuItem = {
@@ -36,6 +37,11 @@ export type Settings = {
   upi_id: string | null;
   zomato_url: string | null;
   catering_text: string;
+  direct_delivery_enabled: boolean;
+  direct_offline_reason: string;
+  eden_enabled: boolean;
+  eden_offline_reason: string;
+  delivery_staff_phones: string;
 };
 
 export type Coupon = {
@@ -70,6 +76,8 @@ export type OrderRow = {
   delivery_otp: string;
   status: string;
   created_at: string;
+  delivery_phone?: string | null;
+  completed_at?: string | null;
 };
 
 export type CartLine = {
