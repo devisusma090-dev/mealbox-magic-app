@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { adminLogin } from "@/lib/admin.functions";
 import { ADMIN_PASSCODE_KEY } from "@/lib/admin-session";
 
-export function Footer({ phone, zomatoUrl }: { phone?: string; zomatoUrl?: string | null }) {
+export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomatoUrl?: string | null | undefined }) {
   const [open, setOpen] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [busy, setBusy] = useState(false);
