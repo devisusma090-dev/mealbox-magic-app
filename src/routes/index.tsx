@@ -128,23 +128,11 @@ function MenuPage() {
         })}
 
         {menu && menu.addons.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="font-display text-2xl font-bold">Cold drinks & add-ons</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {menu.addons.map((addon) => (
-                <MenuItemRow
-                  key={addon.id}
-                  id={addon.id}
-                  kind="addon"
-                  name={addon.name}
-                  price={Number(addon.price)}
-                  available={addon.available}
-                  disabled={!!closed}
-                />
-              ))}
-            </div>
-          </section>
+          <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+            Chilled drinks & add-ons are available in your cart before checkout.
+          </p>
         )}
+
       </main>
 
       <Footer phone={settings?.contact_phone} zomatoUrl={settings?.zomato_url} />
