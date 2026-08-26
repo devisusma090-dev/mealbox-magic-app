@@ -173,22 +173,41 @@ function CheckoutPage() {
                     <span className="block text-sm text-muted-foreground">Served to your table · Free</span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
-                  <RadioGroupItem value="direct" className="mt-1" />
+                <label
+                  className={`flex items-start gap-3 rounded-lg border border-border p-3 ${
+                    settings && !settings.direct_delivery_enabled ? "opacity-50" : ""
+                  }`}
+                >
+                  <RadioGroupItem
+                    value="direct"
+                    className="mt-1"
+                    disabled={!!settings && !settings.direct_delivery_enabled}
+                  />
                   <span>
                     <span className="block font-semibold">Direct delivery</span>
                     <span className="block text-sm text-muted-foreground">
-                      Flat {rupees(settings?.delivery_fee ?? 30)} delivery fee
+                      {settings && !settings.direct_delivery_enabled
+                        ? settings.direct_offline_reason
+                        : `Flat ${rupees(settings?.delivery_fee ?? 30)} delivery fee`}
                     </span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
-                  <RadioGroupItem value="eden" className="mt-1" />
+                <label
+                  className={`flex items-start gap-3 rounded-lg border border-border p-3 ${
+                    settings && !settings.eden_enabled ? "opacity-50" : ""
+                  }`}
+                >
+                  <RadioGroupItem value="eden" className="mt-1" disabled={!!settings && !settings.eden_enabled} />
                   <span>
                     <span className="block font-semibold">Eden Court doorstep</span>
-                    <span className="block text-sm text-muted-foreground">Free delivery inside Eden Court</span>
+                    <span className="block text-sm text-muted-foreground">
+                      {settings && !settings.eden_enabled
+                        ? settings.eden_offline_reason
+                        : "Free delivery inside Eden Court"}
+                    </span>
                   </span>
                 </label>
+
               </RadioGroup>
 
               {mode === "table" && (
