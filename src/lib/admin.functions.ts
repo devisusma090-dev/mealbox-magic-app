@@ -73,7 +73,7 @@ export const adminCompleteByOtp = createServerFn({ method: "POST" })
       .from("orders")
       .select("*")
       .eq("delivery_otp", data.otp)
-      .eq("status", "pending")
+      .in("status", ["pending", "out_for_delivery"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
