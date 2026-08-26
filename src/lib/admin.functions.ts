@@ -73,7 +73,7 @@ export const adminCompleteByOtp = createServerFn({ method: "POST" })
       .from("orders")
       .select("*")
       .eq("delivery_otp", data.otp)
-      .eq("status", "pending")
+      .in("status", ["pending", "out_for_delivery"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -91,7 +91,7 @@ export const adminSetOrderStatus = createServerFn({ method: "POST" })
     status: String(input.status ?? ""),
   }))
   .handler(async ({ data }) => {
-    if (!["pending", "completed", "cancelled"].includes(data.status)) throw new Error("Invalid status");
+    if (!["pending", "out_for_delivery", "completed", "cancelled"].includes(data.status)) throw new Error("Invalid status");
     const db = await adminDb(data.passcode);
     const { error } = await db.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
