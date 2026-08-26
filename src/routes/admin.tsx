@@ -156,8 +156,9 @@ function AdminBoard({ passcode }: { passcode: string }) {
                           {o.customer_name || "Guest"} · {o.phone || "—"}
                         </div>
                         <Badge variant={o.status === "completed" ? "default" : o.status === "cancelled" ? "destructive" : "secondary"}>
-                          {o.status}
+                          {statusLabel(o.status)}
                         </Badge>
+
                       </div>
                       <div className="text-muted-foreground">
                         {o.mode === "table"
