@@ -205,9 +205,17 @@ function AdminBoard({ passcode }: { passcode: string }) {
                       key={c.id}
                       fields={[
                         { name: "name", value: c.name },
+                        { name: "chef_phone", value: c.chef_phone ?? "", width: "w-40" },
                         { name: "sort_order", value: String(c.sort_order), type: "number", width: "w-24" },
                       ]}
-                      onSave={(v) => save("categories", { id: c.id, name: v['name'], sort_order: Number(v['sort_order']) })}
+                      onSave={(v) =>
+                        save("categories", {
+                          id: c.id,
+                          name: v['name'],
+                          chef_phone: v['chef_phone'] || null,
+                          sort_order: Number(v['sort_order']),
+                        })
+                      }
                       onDelete={() => del("categories", c.id)}
                     />
                   ))}
@@ -216,10 +224,21 @@ function AdminBoard({ passcode }: { passcode: string }) {
                     addMode
                     fields={[
                       { name: "name", value: "" },
+                      { name: "chef_phone", value: "", width: "w-40" },
                       { name: "sort_order", value: "0", type: "number", width: "w-24" },
                     ]}
-                    onSave={(v) => save("categories", { name: v['name'], sort_order: Number(v['sort_order']) })}
+                    onSave={(v) =>
+                      save("categories", {
+                        name: v['name'],
+                        chef_phone: v['chef_phone'] || null,
+                        sort_order: Number(v['sort_order']),
+                      })
+                    }
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Chef phone: WhatsApp alerts for this category's items are sent to this number.
+                  </p>
+
                 </CardContent>
               </Card>
 
