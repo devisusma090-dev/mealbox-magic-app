@@ -151,6 +151,33 @@ export type Database = {
           },
         ]
       }
+      order_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          mode: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          mode?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          mode?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string | null
@@ -165,6 +192,8 @@ export type Database = {
           flat: string | null
           id: string
           items: Json
+          lat: number | null
+          lng: number | null
           mode: string
           phone: string | null
           status: string
@@ -187,6 +216,8 @@ export type Database = {
           flat?: string | null
           id?: string
           items?: Json
+          lat?: number | null
+          lng?: number | null
           mode?: string
           phone?: string | null
           status?: string
@@ -209,6 +240,8 @@ export type Database = {
           flat?: string | null
           id?: string
           items?: Json
+          lat?: number | null
+          lng?: number | null
           mode?: string
           phone?: string | null
           status?: string
