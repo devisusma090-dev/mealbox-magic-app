@@ -67,7 +67,10 @@ function AdminBoard({ passcode }: { passcode: string }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-all"],
     queryFn: () => loadAll({ data: { passcode } }),
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
   });
+
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-all"] });
 
