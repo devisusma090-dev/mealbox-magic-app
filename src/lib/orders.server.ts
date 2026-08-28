@@ -9,6 +9,8 @@ export type PlaceOrderInput = {
   name?: string;
   address?: string;
   couponCode?: string;
+  lat?: number | null;
+  lng?: number | null;
   lines: { id: string; kind: "item" | "addon"; qty: number; note?: string }[];
 };
 
