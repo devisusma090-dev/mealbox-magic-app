@@ -66,7 +66,7 @@ export function DeliveryPortal() {
             onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
           />
         </div>
-        <Button className="w-full" disabled={phoneInput.length !== 10} onClick={() => setPhone(phoneInput)}>
+        <Button className="w-full" disabled={phoneInput.length !== 10} onClick={() => { primeAudio(); setPhone(phoneInput); }}>
           <Bike className="size-4" /> Open delivery queue
         </Button>
       </div>
