@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { BellRing, MapPin, Trash2 } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,10 @@ import {
   adminUpsert,
 } from "@/lib/admin.functions";
 import { getAdminPasscode, clearAdminPasscode } from "@/lib/admin-session";
+import { ImageCropUpload } from "@/components/site/ImageCropUpload";
+import { useOrderEvents } from "@/lib/live";
+import { ding, primeAudio, startAlarm, stopAlarm } from "@/lib/alarm";
+import { mapsUrl, pushNotify, requestNotificationPermission } from "@/lib/notify";
 import { rupees, type Addon, type Category, type Coupon, type MenuItem, type OrderRow, type Settings } from "@/lib/menu-types";
 
 export const Route = createFileRoute("/admin")({
@@ -72,7 +76,27 @@ function AdminBoard({ passcode }: { passcode: string }) {
   });
 
 
+  const [alarming, setAlarming] = useState(false);
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-all"] });
+
+  useEffect(() => {
+    primeAudio();
+    void requestNotificationPermission();
+    return () => stopAlarm();
+  }, []);
+
+  useOrderEvents((event) => {
+    refresh();
+    if (event.kind === "new") {
+      startAlarm();
+      setAlarming(true);
+      pushNotify("New order", "A new order just came in.", event.order_id);
+    } else if (event.status === "completed") {
+      ding();
+      pushNotify("Order delivered", "An order was completed with OTP.", event.order_id);
+    }
+  });
 
   const save = async (table: string, row: Record<string, unknown>) => {
     try {
@@ -120,9 +144,16 @@ function AdminBoard({ passcode }: { passcode: string }) {
       <main className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Staff panel</h1>
-          <Button variant="outline" size="sm" onClick={() => { clearAdminPasscode(); window.location.href = "/"; }}>
-            Sign out
-          </Button>
+          <div className="flex gap-2">
+            {alarming && (
+              <Button size="sm" variant="destructive" onClick={() => { stopAlarm(); setAlarming(false); }}>
+                <BellRing className="size-4" /> Acknowledge new order
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => { clearAdminPasscode(); window.location.href = "/"; }}>
+              Sign out
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -183,6 +214,13 @@ function AdminBoard({ passcode }: { passcode: string }) {
                           OTP {o.delivery_otp} · {new Date(o.created_at).toLocaleString()}
                         </span>
                       </div>
+                      {mapsUrl(o.lat, o.lng) && (
+                        <Button size="sm" variant="outline" asChild>
+                          <a href={mapsUrl(o.lat, o.lng)!} target="_blank" rel="noreferrer">
+                            <MapPin className="size-4" /> Navigate on Google Maps
+                          </a>
+                        </Button>
+                      )}
                       <ChefAlerts order={o} items={items} categories={categories} />
                       {o.status === "pending" && (
 
@@ -603,7 +641,7 @@ function ItemEditor({
         </select>
       </div>
       <Textarea rows={2} placeholder="Description" value={desc ?? ""} onChange={(e) => setDesc(e.target.value)} />
-      <Input placeholder="Image URL" value={image ?? ""} onChange={(e) => setImage(e.target.value)} />
+      <ImageCropUpload value={image ?? ""} onChange={setImage} />
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <label className="flex items-center gap-2"><Switch checked={veg} onCheckedChange={setVeg} /> Veg</label>
         <label className="flex items-center gap-2"><Switch checked={available} onCheckedChange={setAvailable} /> Available</label>
