@@ -113,6 +113,8 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
       total,
       coupon_code: couponCode,
       delivery_otp: otp,
+      lat: input.lat ?? null,
+      lng: input.lng ?? null,
       status: "pending",
     })
     .select("*")
