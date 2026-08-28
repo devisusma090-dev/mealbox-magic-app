@@ -2,13 +2,16 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, RefreshCw } from "lucide-react";
+import { Bike, MapPin, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { deliveryCompleteByOtp, deliveryMarkOut, deliveryQueue } from "@/lib/delivery.functions";
 import { rupees } from "@/lib/menu-types";
+import { useOrderEvents } from "@/lib/live";
+import { ding, primeAudio } from "@/lib/alarm";
+import { mapsUrl } from "@/lib/notify";
 
 type QueueOrder = {
   id: string;
@@ -23,6 +26,8 @@ type QueueOrder = {
   total: number;
   status: string;
   created_at: string;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export function DeliveryPortal() {
@@ -43,6 +48,11 @@ export function DeliveryPortal() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["delivery-queue"] });
 
+  useOrderEvents((event) => {
+    refresh();
+    if (event.kind === "new") ding();
+  }, phone.length > 0);
+
   if (!phone) {
     return (
       <div className="space-y-3">
@@ -56,7 +66,7 @@ export function DeliveryPortal() {
             onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
           />
         </div>
-        <Button className="w-full" disabled={phoneInput.length !== 10} onClick={() => setPhone(phoneInput)}>
+        <Button className="w-full" disabled={phoneInput.length !== 10} onClick={() => { primeAudio(); setPhone(phoneInput); }}>
           <Bike className="size-4" /> Open delivery queue
         </Button>
       </div>
@@ -141,6 +151,13 @@ export function DeliveryPortal() {
             <div className="flex items-center justify-between gap-2">
               <span className="font-semibold">{rupees(Number(o.total))}</span>
               <div className="flex gap-2">
+                {mapsUrl(o.lat, o.lng) && (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={mapsUrl(o.lat, o.lng)!} target="_blank" rel="noreferrer">
+                      <MapPin className="size-4" /> Navigate
+                    </a>
+                  </Button>
+                )}
                 {o.phone && (
                   <Button size="sm" variant="outline" asChild>
                     <a href={`tel:${o.phone}`}>Call</a>

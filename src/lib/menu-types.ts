@@ -78,6 +78,8 @@ export type OrderRow = {
   created_at: string;
   delivery_phone?: string | null;
   completed_at?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export type CartLine = {

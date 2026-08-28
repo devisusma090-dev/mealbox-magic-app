@@ -16,7 +16,7 @@ export async function chefOrders(db: Db, categoryIds: string[]) {
     db.from("menu_items").select("id,category_id").in("category_id", categoryIds),
     db
       .from("orders")
-      .select("id,mode,table_no,tower,flat,address,customer_name,phone,items,total,status,created_at")
+      .select("id,mode,table_no,tower,flat,address,customer_name,phone,items,total,status,created_at,lat,lng")
       .in("status", ["pending", "out_for_delivery"])
       .order("created_at", { ascending: false })
       .limit(60),

@@ -9,6 +9,8 @@ export type PlaceOrderInput = {
   name?: string;
   address?: string;
   couponCode?: string;
+  lat?: number | null;
+  lng?: number | null;
   lines: { id: string; kind: "item" | "addon"; qty: number; note?: string }[];
 };
 
@@ -24,8 +26,11 @@ export function validatePlaceOrderInput(input: PlaceOrderInput): PlaceOrderInput
   if (input.mode === "direct" && (!input.phone || !input.address)) {
     throw new Error("Phone and address are required for direct delivery.");
   }
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
   return {
     ...input,
+    lat: num(input.lat),
+    lng: num(input.lng),
     lines: input.lines
       .filter((l) => l && l.id && l.qty > 0)
       .map((l) => ({ id: l.id, kind: l.kind === "addon" ? "addon" : "item", qty: Math.min(50, Math.floor(l.qty)), note: (l.note ?? "").slice(0, 300) })),
@@ -108,6 +113,8 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
       total,
       coupon_code: couponCode,
       delivery_otp: otp,
+      lat: input.lat ?? null,
+      lng: input.lng ?? null,
       status: "pending",
     })
     .select("*")

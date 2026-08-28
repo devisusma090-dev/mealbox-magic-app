@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { LocateFixed, Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,28 @@ function CheckoutPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [placed, setPlaced] = useState<{ otp: string; total: number; id: string } | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  const useMyLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      toast.error("Location is not supported on this device.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+        toast.success("Location captured");
+      },
+      () => {
+        setLocating(false);
+        toast.error("Could not get your location. Please allow location access.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("mb91_table_no");
@@ -84,6 +106,8 @@ function CheckoutPage() {
           address,
           name: user?.user_metadata?.["full_name"] ?? user?.email ?? "",
           couponCode: coupon?.code ?? "",
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
           lines: lines.map((l) => ({ id: l.id, kind: l.kind, qty: l.qty, note: l.note })),
         },
       });
@@ -237,6 +261,19 @@ function CheckoutPage() {
                       placeholder="10-digit number"
                     />
                   </div>
+                </div>
+              )}
+
+              {mode !== "table" && (
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-border p-3">
+                  <Button type="button" variant="outline" size="sm" onClick={useMyLocation} disabled={locating}>
+                    <LocateFixed className="size-4" /> {locating ? "Locating…" : "Use my GPS location"}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {coords
+                      ? `Pinned at ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+                      : "Helps our delivery partner navigate straight to you."}
+                  </span>
                 </div>
               )}
 
