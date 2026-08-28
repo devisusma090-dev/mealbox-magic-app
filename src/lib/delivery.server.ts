@@ -23,7 +23,7 @@ export async function assertStaffPhone(db: Db, phone: string) {
 export async function loadDeliveryQueue(db: Db) {
   const { data } = await db
     .from("orders")
-    .select("id,mode,tower,flat,address,table_no,customer_name,phone,items,total,status,created_at,delivery_phone")
+    .select("id,mode,tower,flat,address,table_no,customer_name,phone,items,total,status,created_at,delivery_phone,lat,lng")
     .in("status", ["pending", "out_for_delivery"])
     .order("created_at", { ascending: false })
     .limit(60);
