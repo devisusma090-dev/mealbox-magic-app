@@ -56,7 +56,7 @@ export function ImageCropUpload({ value, onChange }: { value: string; onChange: 
     setBusy(true);
     try {
       const dataUrl = await cropToDataUrl(src, area);
-      const res = await upload({ data: { passcode: getAdminPasscode() ?? "", dataUrl, folder: "items" } });
+      const res = await upload({ data: { passcode: getAdminPasscode(), dataUrl, folder: "items" } });
       onChange(res.url);
       setSrc(null);
       toast.success("Image uploaded");
