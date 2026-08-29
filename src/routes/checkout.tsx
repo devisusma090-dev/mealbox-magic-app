@@ -320,7 +320,18 @@ function CheckoutPage() {
             </section>
 
             {loading ? null : user ? (
-              <Button className="w-full" size="lg" onClick={() => setPayOpen(true)}>
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => {
+                  const problem = validateDetails();
+                  if (problem) {
+                    toast.error(problem);
+                    return;
+                  }
+                  setPayOpen(true);
+                }}
+              >
                 <QrCode className="size-4" /> Pay {rupees(total)} via UPI
               </Button>
             ) : (
