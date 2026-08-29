@@ -93,7 +93,23 @@ function CheckoutPage() {
     }
   };
 
+  const validateDetails = (): string | null => {
+    if (lines.length === 0) return "Your cart is empty.";
+    if (mode === "table" && !tableNo.trim()) return "Table number is required.";
+    if (mode === "eden" && (!tower.trim() || !flat.trim() || phone.trim().length < 10))
+      return "Tower, flat and a 10-digit phone are required for Eden Court delivery.";
+    if (mode === "direct" && (phone.trim().length < 10 || !address.trim()))
+      return "Phone and address are required for direct delivery.";
+    return null;
+  };
+
   const confirmPaid = async () => {
+    const problem = validateDetails();
+    if (problem) {
+      toast.error(problem);
+      setPayOpen(false);
+      return;
+    }
     setBusy(true);
     try {
       const order = await runPlaceOrder({
@@ -320,7 +336,18 @@ function CheckoutPage() {
             </section>
 
             {loading ? null : user ? (
-              <Button className="w-full" size="lg" onClick={() => setPayOpen(true)}>
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => {
+                  const problem = validateDetails();
+                  if (problem) {
+                    toast.error(problem);
+                    return;
+                  }
+                  setPayOpen(true);
+                }}
+              >
                 <QrCode className="size-4" /> Pay {rupees(total)} via UPI
               </Button>
             ) : (
