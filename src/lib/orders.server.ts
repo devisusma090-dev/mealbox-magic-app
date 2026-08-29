@@ -9,6 +9,7 @@ export type PlaceOrderInput = {
   name?: string;
   address?: string;
   couponCode?: string;
+  paymentMethod?: "cod" | "upi";
   lat?: number | null;
   lng?: number | null;
   lines: { id: string; kind: "item" | "addon"; qty: number; note?: string }[];
@@ -26,9 +27,11 @@ export function validatePlaceOrderInput(input: PlaceOrderInput): PlaceOrderInput
   if (input.mode === "direct" && (!input.phone || !input.address)) {
     throw new Error("Phone and address are required for direct delivery.");
   }
+  const paymentMethod: "cod" | "upi" = input.paymentMethod === "upi" ? "upi" : "cod";
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
   return {
     ...input,
+    paymentMethod,
     lat: num(input.lat),
     lng: num(input.lng),
     lines: input.lines
@@ -115,13 +118,56 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
       delivery_otp: otp,
       lat: input.lat ?? null,
       lng: input.lng ?? null,
+      payment_method: input.paymentMethod ?? "cod",
+      paid: input.paymentMethod === "upi",
       status: "pending",
     })
     .select("*")
     .single();
 
   if (error) throw new Error(error.message);
-  return order;
+
+  const chefAlerts = await buildChefAlerts(db, order, priced);
+  return { ...order, chefAlerts };
+}
+
+export type ChefAlert = { category: string; phone: string; text: string };
+
+async function buildChefAlerts(db: Db, order: any, priced: { id: string; kind: string; name: string; qty: number; note: string }[]) {
+  const itemIds = priced.filter((l) => l.kind === "item").map((l) => l.id);
+  if (itemIds.length === 0) return [] as ChefAlert[];
+
+  const [{ data: menuRows }, { data: categories }] = await Promise.all([
+    db.from("menu_items").select("id,category_id").in("id", itemIds),
+    db.from("categories").select("id,name,chef_phone"),
+  ]);
+
+  const categoryOf = new Map<string, string>();
+  for (const r of menuRows ?? []) categoryOf.set(r.id, r.category_id);
+
+  const where =
+    order.mode === "table"
+      ? `Table ${order.table_no ?? "-"}`
+      : order.mode === "eden"
+        ? `Eden Court - Tower ${order.tower ?? "-"}, Flat ${order.flat ?? "-"}`
+        : order.address || "Direct delivery";
+
+  const alerts: ChefAlert[] = [];
+  for (const c of categories ?? []) {
+    const phone = String(c.chef_phone ?? "").replace(/\D/g, "").slice(-10);
+    if (phone.length !== 10) continue;
+    const lines = priced.filter((l) => l.kind === "item" && categoryOf.get(l.id) === c.id);
+    if (lines.length === 0) continue;
+    alerts.push({
+      category: c.name as string,
+      phone,
+      text:
+        `New Mealbox91 order (${c.name})\n${where}\n` +
+        lines.map((l) => `${l.qty}x ${l.name}${l.note ? ` (${l.note})` : ""}`).join("\n") +
+        `\nPayment: ${order.payment_method === "upi" ? "Paid via UPI" : "Cash on delivery"}`,
+    });
+  }
+  return alerts;
 }
 
 export async function rewardReferrerIfFirstOrder(db: Db, userId: string) {
