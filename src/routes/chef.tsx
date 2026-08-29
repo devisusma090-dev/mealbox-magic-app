@@ -38,7 +38,7 @@ type ChefOrder = {
   address: string | null;
   customer_name: string | null;
   phone: string | null;
-  items: { key: string; name: string; qty: number; note?: string }[];
+  items: { key: string; name: string; qty: number; note?: string; category_id?: string }[];
   total: number;
   status: string;
   created_at: string;
