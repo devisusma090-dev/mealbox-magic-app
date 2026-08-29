@@ -155,7 +155,14 @@ function ChefPage() {
             All
           </Badge>
           {categories.map((c) => (
-            <Badge key={c.id} variant="outline">{c.name}</Badge>
+            <Badge
+              key={c.id}
+              variant={categoryId === c.id ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setCategoryId(c.id)}
+            >
+              {c.name}
+            </Badge>
           ))}
         </div>
 
