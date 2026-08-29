@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bike, ShieldCheck } from "lucide-react";
+import { Bike, ChefHat, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,20 @@ export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomat
                 <span className="text-left">
                   <span className="block font-semibold">Delivery Portal</span>
                   <span className="block text-xs text-muted-foreground">Live queue & OTP completion</span>
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto justify-start py-4"
+                onClick={() => {
+                  setOpen(false);
+                  navigate({ to: "/chef" });
+                }}
+              >
+                <ChefHat className="size-5" />
+                <span className="text-left">
+                  <span className="block font-semibold">Chef Dashboard</span>
+                  <span className="block text-xs text-muted-foreground">Live kitchen board by category</span>
                 </span>
               </Button>
             </div>

@@ -41,7 +41,10 @@ export function ImageCropUpload({ value, onChange }: { value: string; onChange: 
 
   const pick = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) return toast.error("Please choose an image file.");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       setSrc(String(reader.result));

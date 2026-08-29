@@ -38,7 +38,7 @@ type ChefOrder = {
   address: string | null;
   customer_name: string | null;
   phone: string | null;
-  items: { key: string; name: string; qty: number; note?: string }[];
+  items: { key: string; name: string; qty: number; note?: string; category_id?: string }[];
   total: number;
   status: string;
   created_at: string;
@@ -116,7 +116,12 @@ function ChefPage() {
 
   const categories = data?.categories ?? [];
   const orders = (data?.orders ?? []) as unknown as ChefOrder[];
-  const visible = categoryId === "all" ? orders : orders;
+  const visible =
+    categoryId === "all"
+      ? orders
+      : orders
+          .map((o) => ({ ...o, items: (o.items ?? []).filter((l) => l.category_id === categoryId) }))
+          .filter((o) => o.items.length > 0);
 
   return (
     <div className="min-h-screen pb-12">
@@ -150,7 +155,14 @@ function ChefPage() {
             All
           </Badge>
           {categories.map((c) => (
-            <Badge key={c.id} variant="outline">{c.name}</Badge>
+            <Badge
+              key={c.id}
+              variant={categoryId === c.id ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setCategoryId(c.id)}
+            >
+              {c.name}
+            </Badge>
           ))}
         </div>
 
