@@ -141,7 +141,17 @@ function OrdersPage() {
             <p className="text-sm text-muted-foreground">No orders in the last 48 hours.</p>
           )}
           {data?.orders.map((o) => (
-            <article key={o.id} className="surface-card space-y-2 p-4">
+            <article
+              key={o.id}
+              className={`surface-card space-y-2 p-4 ${
+                o.status === "completed" ? "border-emerald-500/60 bg-emerald-500/10" : ""
+              }`}
+            >
+              {o.status === "completed" && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-emerald-50">
+                  <CheckCircle2 className="size-4" /> Order Delivered Successfully
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleString("en-IN")}</p>
                 <Badge variant={o.status === "cancelled" ? "destructive" : o.status === "completed" ? "default" : "secondary"}>
@@ -158,7 +168,13 @@ function OrdersPage() {
               </ul>
               <div className="flex items-center justify-between border-t border-border pt-2">
                 <span className="text-sm">
-                  Delivery OTP: <strong className="font-mono tracking-widest">{o.delivery_otp}</strong>
+                  {o.status === "completed" ? (
+                    <span className="text-muted-foreground">OTP verified</span>
+                  ) : (
+                    <>
+                      Delivery OTP: <strong className="font-mono tracking-widest">{o.delivery_otp}</strong>
+                    </>
+                  )}
                 </span>
                 <strong>{rupees(o.total)}</strong>
               </div>
