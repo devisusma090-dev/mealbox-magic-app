@@ -98,6 +98,20 @@ export function Footer({ phone, zomatoUrl }: { phone?: string | undefined; zomat
                   <span className="block text-xs text-muted-foreground">Live queue & OTP completion</span>
                 </span>
               </Button>
+              <Button
+                variant="outline"
+                className="h-auto justify-start py-4"
+                onClick={() => {
+                  setOpen(false);
+                  navigate({ to: "/chef" });
+                }}
+              >
+                <ChefHat className="size-5" />
+                <span className="text-left">
+                  <span className="block font-semibold">Chef Dashboard</span>
+                  <span className="block text-xs text-muted-foreground">Live kitchen board by category</span>
+                </span>
+              </Button>
             </div>
           )}
 
