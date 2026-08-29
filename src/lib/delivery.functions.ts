@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { assertStaffPhone, completeByOtp, loadDeliveryQueue } from "./delivery.server";
+import { assertStaffPhone, completeByOtp, loadDeliveryQueue, loadPaymentSettings } from "./delivery.server";
 
 export const deliveryQueue = createServerFn({ method: "POST" })
   .inputValidator((input: { phone: string }) => ({ phone: String(input.phone ?? "") }))
@@ -7,8 +7,8 @@ export const deliveryQueue = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as never as { from: (t: string) => any };
     const phone = await assertStaffPhone(db, data.phone);
-    const orders = await loadDeliveryQueue(db);
-    return { phone, orders };
+    const [orders, payment] = await Promise.all([loadDeliveryQueue(db), loadPaymentSettings(db)]);
+    return { phone, orders, payment };
   });
 
 export const deliveryMarkOut = createServerFn({ method: "POST" })
@@ -30,14 +30,15 @@ export const deliveryMarkOut = createServerFn({ method: "POST" })
   });
 
 export const deliveryCompleteByOtp = createServerFn({ method: "POST" })
-  .inputValidator((input: { phone: string; otp: string }) => ({
+  .inputValidator((input: { phone: string; otp: string; paymentMethod?: "cash" | "upi" }) => ({
     phone: String(input.phone ?? ""),
     otp: String(input.otp ?? "").replace(/\D/g, "").slice(0, 4),
+    paymentMethod: input.paymentMethod === "upi" ? ("upi" as const) : ("cash" as const),
   }))
   .handler(async ({ data }) => {
     if (data.otp.length !== 4) throw new Error("Enter the customer's 4-digit OTP.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as never as { from: (t: string) => any };
     const phone = await assertStaffPhone(db, data.phone);
-    return completeByOtp(db, data.otp, phone);
+    return completeByOtp(db, data.otp, phone, data.paymentMethod);
   });
