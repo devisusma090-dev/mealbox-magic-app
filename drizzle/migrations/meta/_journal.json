@@ -15,6 +15,13 @@
       "when": 1787798506462,
       "tag": "0001_gps_and_live_order_events",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788016370451,
+      "tag": "0002_order_payment_method",
+      "breakpoints": true
     }
   ]
 }

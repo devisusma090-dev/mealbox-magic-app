@@ -195,6 +195,8 @@ export type Database = {
           lat: number | null
           lng: number | null
           mode: string
+          paid: boolean
+          payment_method: string
           phone: string | null
           status: string
           subtotal: number
@@ -219,6 +221,8 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           mode?: string
+          paid?: boolean
+          payment_method?: string
           phone?: string | null
           status?: string
           subtotal?: number
@@ -243,6 +247,8 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           mode?: string
+          paid?: boolean
+          payment_method?: string
           phone?: string | null
           status?: string
           subtotal?: number
