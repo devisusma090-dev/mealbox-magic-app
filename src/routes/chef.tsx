@@ -116,7 +116,12 @@ function ChefPage() {
 
   const categories = data?.categories ?? [];
   const orders = (data?.orders ?? []) as unknown as ChefOrder[];
-  const visible = categoryId === "all" ? orders : orders;
+  const visible =
+    categoryId === "all"
+      ? orders
+      : orders
+          .map((o) => ({ ...o, items: (o.items ?? []).filter((l) => l.category_id === categoryId) }))
+          .filter((o) => o.items.length > 0);
 
   return (
     <div className="min-h-screen pb-12">
