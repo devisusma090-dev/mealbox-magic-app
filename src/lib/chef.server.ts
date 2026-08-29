@@ -27,7 +27,9 @@ export async function chefOrders(db: Db, categoryIds: string[]) {
 
   return (orders ?? [])
     .map((o: any) => {
-      const lines = (o.items ?? []).filter((l: any) => categoryOf.has(l.id));
+      const lines = (o.items ?? [])
+        .filter((l: any) => categoryOf.has(l.id))
+        .map((l: any) => ({ ...l, category_id: categoryOf.get(l.id) }));
       return { ...o, items: lines };
     })
     .filter((o: any) => o.items.length > 0);
