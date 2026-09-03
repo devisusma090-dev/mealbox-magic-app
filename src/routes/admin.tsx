@@ -405,12 +405,18 @@ function Analytics({ orders }: { orders: OrderRow[] }) {
   const completed = todays.filter((o) => o.status === "completed");
   const cancelled = todays.filter((o) => o.status === "cancelled");
   const sales = completed.reduce((s, o) => s + Number(o.total || 0), 0);
+  const sum = (rows: OrderRow[]) => rows.reduce((s, o) => s + Number(o.total || 0), 0);
+  const upiSales = sum(completed.filter((o) => o.payment_method === "upi"));
+  const cashSales = sum(completed.filter((o) => o.payment_method !== "upi"));
   const stats = [
     { label: "Today's sales", value: rupees(sales) },
+    { label: "Cash collected", value: rupees(cashSales) },
+    { label: "UPI collected", value: rupees(upiSales) },
     { label: "Completed today", value: String(completed.length) },
     { label: "Cancelled today", value: String(cancelled.length) },
     { label: "Orders (48h)", value: String(orders.length) },
   ];
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
