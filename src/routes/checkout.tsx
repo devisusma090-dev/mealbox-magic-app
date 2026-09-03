@@ -111,7 +111,7 @@ function CheckoutPage() {
     return null;
   };
 
-  const confirmPaid = async () => {
+  const submitOrder = async (paymentMethod: "cod" | "upi") => {
     const problem = validateDetails();
     if (problem) {
       toast.error(problem);
@@ -128,6 +128,7 @@ function CheckoutPage() {
           flat,
           phone,
           address,
+          paymentMethod,
           name: user?.user_metadata?.["full_name"] ?? user?.email ?? "",
           couponCode: coupon?.code ?? "",
           lat: coords?.lat ?? null,
@@ -137,7 +138,18 @@ function CheckoutPage() {
       });
       clear();
       setPayOpen(false);
-      setPlaced({ otp: order.delivery_otp, total: Number(order.total), id: order.id });
+      const alerts = (order as { chefAlerts?: { category: string; phone: string; text: string }[] }).chefAlerts ?? [];
+      setPlaced({
+        otp: order.delivery_otp,
+        total: Number(order.total),
+        id: order.id,
+        paymentMethod,
+        chefAlerts: alerts,
+      });
+      const first = alerts[0];
+      if (first) {
+        window.open(`https://wa.me/91${first.phone}?text=${encodeURIComponent(first.text)}`, "_blank", "noopener");
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not place order");
     } finally {
@@ -158,8 +170,25 @@ function CheckoutPage() {
             </p>
             <p className="mt-6 font-display text-5xl font-extrabold tracking-[0.3em] text-primary">{placed.otp}</p>
             <p className="mt-4 text-sm">
-              Amount paid: <strong>{rupees(placed.total)}</strong>
+              {placed.paymentMethod === "upi" ? "Amount paid" : "Pay on delivery"}: <strong>{rupees(placed.total)}</strong>
             </p>
+            {placed.chefAlerts.length > 0 && (
+              <div className="mt-6 space-y-2 text-left">
+                <p className="text-xs text-muted-foreground">Kitchen alerts (tap if a chef alert did not open):</p>
+                {placed.chefAlerts.map((a) => (
+                  <Button key={a.phone} asChild variant="outline" size="sm" className="w-full">
+                    <a
+                      href={`https://wa.me/91${a.phone}?text=${encodeURIComponent(a.text)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="size-4" /> Notify {a.category} chef
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            )}
+
             <div className="mt-6 flex justify-center gap-2">
               <Button asChild variant="outline">
                 <Link to="/">Order more</Link>
