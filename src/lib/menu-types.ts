@@ -80,7 +80,10 @@ export type OrderRow = {
   completed_at?: string | null;
   lat?: number | null;
   lng?: number | null;
+  payment_method?: string | null;
+  paid?: boolean | null;
 };
+
 
 export type CartLine = {
   key: string;

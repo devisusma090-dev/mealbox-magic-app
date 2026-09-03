@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LocateFixed, Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { LocateFixed, MessageCircle, Minus, Plus, QrCode, ShieldCheck, Trash2, Wallet } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { rupees } from "@/lib/menu-types";
 import { useSettings } from "@/hooks/useStoreData";
 import { useAuth } from "@/hooks/useAuth";
 import { placeOrder, previewCoupon } from "@/lib/orders.functions";
+import { upiQrImage } from "@/lib/upi";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/checkout")({
@@ -48,10 +49,18 @@ function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [payOpen, setPayOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState<"cod" | "upi">("cod");
   const [busy, setBusy] = useState(false);
-  const [placed, setPlaced] = useState<{ otp: string; total: number; id: string } | null>(null);
+  const [placed, setPlaced] = useState<{
+    otp: string;
+    total: number;
+    id: string;
+    paymentMethod: "cod" | "upi";
+    chefAlerts: { category: string; phone: string; text: string }[];
+  } | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
+
 
   const useMyLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -82,6 +91,11 @@ function CheckoutPage() {
   const discount = coupon?.discount ?? 0;
   const total = useMemo(() => Math.max(0, subtotal + deliveryFee - discount), [subtotal, deliveryFee, discount]);
 
+  const dynamicQr = useMemo(
+    () => upiQrImage(settings?.upi_id ?? "", total, "Mealbox91 order"),
+    [settings?.upi_id, total],
+  );
+
   const applyCoupon = async () => {
     try {
       const res = await runPreviewCoupon({ data: { code: couponInput, subtotal } });
@@ -103,7 +117,7 @@ function CheckoutPage() {
     return null;
   };
 
-  const confirmPaid = async () => {
+  const submitOrder = async (paymentMethod: "cod" | "upi") => {
     const problem = validateDetails();
     if (problem) {
       toast.error(problem);
@@ -120,6 +134,7 @@ function CheckoutPage() {
           flat,
           phone,
           address,
+          paymentMethod,
           name: user?.user_metadata?.["full_name"] ?? user?.email ?? "",
           couponCode: coupon?.code ?? "",
           lat: coords?.lat ?? null,
@@ -129,7 +144,18 @@ function CheckoutPage() {
       });
       clear();
       setPayOpen(false);
-      setPlaced({ otp: order.delivery_otp, total: Number(order.total), id: order.id });
+      const alerts = (order as { chefAlerts?: { category: string; phone: string; text: string }[] }).chefAlerts ?? [];
+      setPlaced({
+        otp: order.delivery_otp,
+        total: Number(order.total),
+        id: order.id,
+        paymentMethod,
+        chefAlerts: alerts,
+      });
+      const first = alerts[0];
+      if (first) {
+        window.open(`https://wa.me/91${first.phone}?text=${encodeURIComponent(first.text)}`, "_blank", "noopener");
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not place order");
     } finally {
@@ -150,8 +176,25 @@ function CheckoutPage() {
             </p>
             <p className="mt-6 font-display text-5xl font-extrabold tracking-[0.3em] text-primary">{placed.otp}</p>
             <p className="mt-4 text-sm">
-              Amount paid: <strong>{rupees(placed.total)}</strong>
+              {placed.paymentMethod === "upi" ? "Amount paid" : "Pay on delivery"}: <strong>{rupees(placed.total)}</strong>
             </p>
+            {placed.chefAlerts.length > 0 && (
+              <div className="mt-6 space-y-2 text-left">
+                <p className="text-xs text-muted-foreground">Kitchen alerts (tap if a chef alert did not open):</p>
+                {placed.chefAlerts.map((a) => (
+                  <Button key={a.phone} asChild variant="outline" size="sm" className="w-full">
+                    <a
+                      href={`https://wa.me/91${a.phone}?text=${encodeURIComponent(a.text)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="size-4" /> Notify {a.category} chef
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            )}
+
             <div className="mt-6 flex justify-center gap-2">
               <Button asChild variant="outline">
                 <Link to="/">Order more</Link>
@@ -327,6 +370,26 @@ function CheckoutPage() {
               {coupon && <p className="text-sm text-success">{coupon.code} applied</p>}
             </section>
 
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-lg font-bold">Payment</h2>
+              <RadioGroup value={payMethod} onValueChange={(v) => setPayMethod(v as "cod" | "upi")} className="space-y-2">
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="cod" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Cash on Delivery (COD)</span>
+                    <span className="block text-sm text-muted-foreground">Pay cash or UPI to the delivery partner.</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="upi" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Pay now with UPI</span>
+                    <span className="block text-sm text-muted-foreground">Scan our QR and confirm.</span>
+                  </span>
+                </label>
+              </RadioGroup>
+            </section>
+
             <section className="surface-card space-y-2 p-4">
               <Row label="Item total" value={rupees(subtotal)} />
               <Row label="Delivery fee" value={rupees(deliveryFee)} />
@@ -339,16 +402,26 @@ function CheckoutPage() {
               <Button
                 className="w-full"
                 size="lg"
+                disabled={busy}
                 onClick={() => {
                   const problem = validateDetails();
                   if (problem) {
                     toast.error(problem);
                     return;
                   }
-                  setPayOpen(true);
+                  if (payMethod === "upi") setPayOpen(true);
+                  else void submitOrder("cod");
                 }}
               >
-                <QrCode className="size-4" /> Pay {rupees(total)} via UPI
+                {payMethod === "upi" ? (
+                  <>
+                    <QrCode className="size-4" /> Pay {rupees(total)} via UPI
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="size-4" /> Place order · {rupees(total)} on delivery
+                  </>
+                )}
               </Button>
             ) : (
               <Button
@@ -370,22 +443,22 @@ function CheckoutPage() {
           <DialogHeader>
             <DialogTitle>Scan & pay {rupees(total)}</DialogTitle>
           </DialogHeader>
-          {settings?.upi_qr_url ? (
+          {dynamicQr || settings?.upi_qr_url ? (
             <img
-              src={settings.upi_qr_url}
+              src={dynamicQr ?? settings?.upi_qr_url ?? ""}
               alt="Mealbox91 UPI payment QR code"
               className="mx-auto w-56 rounded-lg border border-border"
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              UPI QR not uploaded yet. Please pay on delivery or call us.
+              UPI QR not uploaded yet. Please choose Cash on Delivery.
             </div>
           )}
           {settings?.upi_id && <p className="text-center text-sm">UPI ID: {settings.upi_id}</p>}
           <p className="text-center text-xs text-muted-foreground">
             Pay with any UPI app, then confirm below. You'll get a 4-digit delivery OTP.
           </p>
-          <Button onClick={confirmPaid} disabled={busy}>
+          <Button onClick={() => void submitOrder("upi")} disabled={busy}>
             {busy ? "Placing order…" : "I have paid — place order"}
           </Button>
         </DialogContent>
