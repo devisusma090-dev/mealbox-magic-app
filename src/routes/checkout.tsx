@@ -463,9 +463,6 @@ function CheckoutPage() {
           </Button>
         </DialogContent>
       </Dialog>
-
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
