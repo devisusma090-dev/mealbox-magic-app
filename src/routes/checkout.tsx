@@ -48,10 +48,18 @@ function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [payOpen, setPayOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState<"cod" | "upi">("cod");
   const [busy, setBusy] = useState(false);
-  const [placed, setPlaced] = useState<{ otp: string; total: number; id: string } | null>(null);
+  const [placed, setPlaced] = useState<{
+    otp: string;
+    total: number;
+    id: string;
+    paymentMethod: "cod" | "upi";
+    chefAlerts: { category: string; phone: string; text: string }[];
+  } | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
+
 
   const useMyLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
