@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LocateFixed, Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { LocateFixed, MessageCircle, Minus, Plus, QrCode, ShieldCheck, Trash2, Wallet } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { rupees } from "@/lib/menu-types";
 import { useSettings } from "@/hooks/useStoreData";
 import { useAuth } from "@/hooks/useAuth";
 import { placeOrder, previewCoupon } from "@/lib/orders.functions";
+import { upiQrImage } from "@/lib/upi";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/checkout")({
@@ -89,6 +90,11 @@ function CheckoutPage() {
   const deliveryFee = mode === "direct" ? Number(settings?.delivery_fee ?? 30) : 0;
   const discount = coupon?.discount ?? 0;
   const total = useMemo(() => Math.max(0, subtotal + deliveryFee - discount), [subtotal, deliveryFee, discount]);
+
+  const dynamicQr = useMemo(
+    () => upiQrImage(settings?.upi_id ?? "", total, "Mealbox91 order"),
+    [settings?.upi_id, total],
+  );
 
   const applyCoupon = async () => {
     try {
