@@ -364,6 +364,26 @@ function CheckoutPage() {
               {coupon && <p className="text-sm text-success">{coupon.code} applied</p>}
             </section>
 
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-lg font-bold">Payment</h2>
+              <RadioGroup value={payMethod} onValueChange={(v) => setPayMethod(v as "cod" | "upi")} className="space-y-2">
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="cod" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Cash on Delivery (COD)</span>
+                    <span className="block text-sm text-muted-foreground">Pay cash or UPI to the delivery partner.</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="upi" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Pay now with UPI</span>
+                    <span className="block text-sm text-muted-foreground">Scan our QR and confirm.</span>
+                  </span>
+                </label>
+              </RadioGroup>
+            </section>
+
             <section className="surface-card space-y-2 p-4">
               <Row label="Item total" value={rupees(subtotal)} />
               <Row label="Delivery fee" value={rupees(deliveryFee)} />
@@ -376,16 +396,26 @@ function CheckoutPage() {
               <Button
                 className="w-full"
                 size="lg"
+                disabled={busy}
                 onClick={() => {
                   const problem = validateDetails();
                   if (problem) {
                     toast.error(problem);
                     return;
                   }
-                  setPayOpen(true);
+                  if (payMethod === "upi") setPayOpen(true);
+                  else void submitOrder("cod");
                 }}
               >
-                <QrCode className="size-4" /> Pay {rupees(total)} via UPI
+                {payMethod === "upi" ? (
+                  <>
+                    <QrCode className="size-4" /> Pay {rupees(total)} via UPI
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="size-4" /> Place order · {rupees(total)} on delivery
+                  </>
+                )}
               </Button>
             ) : (
               <Button
@@ -407,24 +437,27 @@ function CheckoutPage() {
           <DialogHeader>
             <DialogTitle>Scan & pay {rupees(total)}</DialogTitle>
           </DialogHeader>
-          {settings?.upi_qr_url ? (
+          {dynamicQr || settings?.upi_qr_url ? (
             <img
-              src={settings.upi_qr_url}
+              src={dynamicQr ?? settings?.upi_qr_url ?? ""}
               alt="Mealbox91 UPI payment QR code"
               className="mx-auto w-56 rounded-lg border border-border"
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              UPI QR not uploaded yet. Please pay on delivery or call us.
+              UPI QR not uploaded yet. Please choose Cash on Delivery.
             </div>
           )}
           {settings?.upi_id && <p className="text-center text-sm">UPI ID: {settings.upi_id}</p>}
           <p className="text-center text-xs text-muted-foreground">
             Pay with any UPI app, then confirm below. You'll get a 4-digit delivery OTP.
           </p>
-          <Button onClick={confirmPaid} disabled={busy}>
+          <Button onClick={() => void submitOrder("upi")} disabled={busy}>
             {busy ? "Placing order…" : "I have paid — place order"}
           </Button>
+        </DialogContent>
+      </Dialog>
+
         </DialogContent>
       </Dialog>
     </div>
