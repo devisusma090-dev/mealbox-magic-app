@@ -189,9 +189,15 @@ function AdminBoard({ passcode }: { passcode: string }) {
                         <div className="font-medium">
                           {o.customer_name || "Guest"} · {o.phone || "—"}
                         </div>
-                        <Badge variant={o.status === "completed" ? "default" : o.status === "cancelled" ? "destructive" : "secondary"}>
-                          {statusLabel(o.status)}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={o.paid ? "default" : "outline"}>
+                            {o.payment_method === "upi" ? "UPI" : "Cash"} · {o.paid ? "Paid" : "Unpaid"}
+                          </Badge>
+                          <Badge variant={o.status === "completed" ? "default" : o.status === "cancelled" ? "destructive" : "secondary"}>
+                            {statusLabel(o.status)}
+                          </Badge>
+                        </div>
+
 
                       </div>
                       <div className="text-muted-foreground">
