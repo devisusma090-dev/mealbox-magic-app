@@ -206,6 +206,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                           : o.mode === "eden"
                             ? `Eden Court · Tower ${o.tower ?? "—"}, Flat ${o.flat ?? "—"}`
                             : o.address || "Direct delivery"}
+                        {o.delivery_slot ? ` · Scheduled ${o.delivery_slot}` : " · ASAP"}
                       </div>
                       <ul className="text-muted-foreground">
                         {(o.items ?? []).map((l) => (

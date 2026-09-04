@@ -39,6 +39,15 @@ export const applyReferralCode = createServerFn({ method: "POST" })
     if (me.referred_by) throw new Error("A referral code is already applied to your account.");
     if (me.referral_code === data.code) throw new Error("You cannot use your own referral code.");
 
+    // Referral rewards are for genuinely NEW customers only.
+    const { count } = await supabaseAdmin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId);
+    if ((count ?? 0) > 0) {
+      throw new Error("Referral codes can only be applied before your first order.");
+    }
+
     const { data: referrer } = await supabaseAdmin
       .from("profiles")
       .select("id")

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LocateFixed, MessageCircle, Minus, Plus, QrCode, ShieldCheck, Trash2, Wallet } from "lucide-react";
+import { Clock, LocateFixed, Minus, Plus, QrCode, ShieldCheck, Trash2, Wallet } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,8 +56,10 @@ function CheckoutPage() {
     total: number;
     id: string;
     paymentMethod: "cod" | "upi";
-    chefAlerts: { category: string; phone: string; text: string }[];
+    slot: string;
   } | null>(null);
+  const [timeMode, setTimeMode] = useState<"asap" | "scheduled">("asap");
+  const [slotTime, setSlotTime] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
 
@@ -107,7 +109,16 @@ function CheckoutPage() {
     }
   };
 
+  const slotLabel = () => {
+    if (timeMode !== "scheduled" || !slotTime) return "";
+    const [h, m] = slotTime.split(":").map(Number);
+    const hour = ((h ?? 0) % 12) || 12;
+    const ampm = (h ?? 0) < 12 ? "AM" : "PM";
+    return `${hour}:${String(m ?? 0).padStart(2, "0")} ${ampm}`;
+  };
+
   const validateDetails = (): string | null => {
+    if (timeMode === "scheduled" && !slotTime) return "Please pick a delivery time slot.";
     if (lines.length === 0) return "Your cart is empty.";
     if (mode === "table" && !tableNo.trim()) return "Table number is required.";
     if (mode === "eden" && (!tower.trim() || !flat.trim() || phone.trim().length < 10))
@@ -135,6 +146,7 @@ function CheckoutPage() {
           phone,
           address,
           paymentMethod,
+          deliverySlot: slotLabel(),
           name: user?.user_metadata?.["full_name"] ?? user?.email ?? "",
           couponCode: coupon?.code ?? "",
           lat: coords?.lat ?? null,
@@ -144,17 +156,25 @@ function CheckoutPage() {
       });
       clear();
       setPayOpen(false);
-      const alerts = (order as { chefAlerts?: { category: string; phone: string; text: string }[] }).chefAlerts ?? [];
+      const result = order as {
+        chefAlerts?: { category: string; phone: string; text: string }[];
+        alertsSent?: boolean;
+      };
       setPlaced({
         otp: order.delivery_otp,
         total: Number(order.total),
         id: order.id,
         paymentMethod,
-        chefAlerts: alerts,
+        slot: slotLabel(),
       });
-      const first = alerts[0];
-      if (first) {
-        window.open(`https://wa.me/91${first.phone}?text=${encodeURIComponent(first.text)}`, "_blank", "noopener");
+      // Chef alerts are automatic — never shown as manual buttons to the customer.
+      if (!result.alertsSent) {
+        (result.chefAlerts ?? []).forEach((a, i) => {
+          setTimeout(
+            () => window.open(`https://wa.me/91${a.phone}?text=${encodeURIComponent(a.text)}`, "_blank", "noopener"),
+            i * 400,
+          );
+        });
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not place order");
@@ -178,22 +198,12 @@ function CheckoutPage() {
             <p className="mt-4 text-sm">
               {placed.paymentMethod === "upi" ? "Amount paid" : "Pay on delivery"}: <strong>{rupees(placed.total)}</strong>
             </p>
-            {placed.chefAlerts.length > 0 && (
-              <div className="mt-6 space-y-2 text-left">
-                <p className="text-xs text-muted-foreground">Kitchen alerts (tap if a chef alert did not open):</p>
-                {placed.chefAlerts.map((a) => (
-                  <Button key={a.phone} asChild variant="outline" size="sm" className="w-full">
-                    <a
-                      href={`https://wa.me/91${a.phone}?text=${encodeURIComponent(a.text)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="size-4" /> Notify {a.category} chef
-                    </a>
-                  </Button>
-                ))}
-              </div>
+            {placed.slot && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Scheduled for <strong>{placed.slot}</strong>
+              </p>
             )}
+            <p className="mt-4 text-xs text-muted-foreground">Our kitchen has been notified automatically.</p>
 
             <div className="mt-6 flex justify-center gap-2">
               <Button asChild variant="outline">
@@ -351,6 +361,39 @@ function CheckoutPage() {
                       placeholder="10-digit number"
                     />
                   </div>
+                </div>
+              )}
+            </section>
+
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-lg font-bold">Delivery time</h2>
+              <RadioGroup
+                value={timeMode}
+                onValueChange={(v) => setTimeMode(v as "asap" | "scheduled")}
+                className="space-y-2"
+              >
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="asap" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Standard · as soon as possible</span>
+                    <span className="block text-sm text-muted-foreground">We start cooking right away.</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <RadioGroupItem value="scheduled" className="mt-1" />
+                  <span>
+                    <span className="block font-semibold">Time-set delivery</span>
+                    <span className="block text-sm text-muted-foreground">Pick a slot — food is cooked fresh for it.</span>
+                  </span>
+                </label>
+              </RadioGroup>
+              {timeMode === "scheduled" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="slot-time">
+                    <Clock className="size-4" /> Delivery time
+                  </Label>
+                  <Input id="slot-time" type="time" value={slotTime} onChange={(e) => setSlotTime(e.target.value)} />
+                  {slotLabel() && <p className="text-xs text-muted-foreground">Scheduled for {slotLabel()}</p>}
                 </div>
               )}
             </section>

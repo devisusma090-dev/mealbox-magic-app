@@ -28,11 +28,31 @@ export async function loadPaymentSettings(db: Db) {
 export async function loadDeliveryQueue(db: Db) {
   const { data } = await db
     .from("orders")
-    .select("id,mode,tower,flat,address,table_no,customer_name,phone,items,total,status,created_at,delivery_phone,lat,lng,payment_method,paid")
+    .select("id,mode,tower,flat,address,table_no,customer_name,phone,items,total,status,created_at,delivery_phone,lat,lng,payment_method,paid,delivery_slot")
     .in("status", ["pending", "out_for_delivery"])
     .order("created_at", { ascending: false })
     .limit(60);
   return (data ?? []) as any[];
+}
+
+/** Today's cash vs UPI settlement for a delivery partner. */
+export async function loadCashSummary(db: Db, staffPhone: string) {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  const { data } = await db
+    .from("orders")
+    .select("total,payment_method")
+    .eq("status", "completed")
+    .eq("delivery_phone", staffPhone)
+    .gte("completed_at", since.toISOString());
+  const rows = (data ?? []) as { total: number; payment_method: string | null }[];
+  const sum = (f: (r: { payment_method: string | null }) => boolean) =>
+    rows.filter(f).reduce((s, r) => s + Number(r.total || 0), 0);
+  return {
+    orders: rows.length,
+    cash: sum((r) => r.payment_method !== "upi"),
+    upi: sum((r) => r.payment_method === "upi"),
+  };
 }
 
 export async function completeByOtp(db: Db, otp: string, staffPhone: string, paymentMethod?: "cash" | "upi") {

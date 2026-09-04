@@ -10,6 +10,7 @@ export type PlaceOrderInput = {
   address?: string;
   couponCode?: string;
   paymentMethod?: "cod" | "upi";
+  deliverySlot?: string;
   lat?: number | null;
   lng?: number | null;
   lines: { id: string; kind: "item" | "addon"; qty: number; note?: string }[];
@@ -32,6 +33,7 @@ export function validatePlaceOrderInput(input: PlaceOrderInput): PlaceOrderInput
   return {
     ...input,
     paymentMethod,
+    deliverySlot: String(input.deliverySlot ?? "").trim().slice(0, 40),
     lat: num(input.lat),
     lng: num(input.lng),
     lines: input.lines
@@ -118,6 +120,7 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
       delivery_otp: otp,
       lat: input.lat ?? null,
       lng: input.lng ?? null,
+      delivery_slot: input.deliverySlot ? input.deliverySlot : null,
       payment_method: input.paymentMethod ?? "cod",
       paid: input.paymentMethod === "upi",
       status: "pending",
@@ -128,7 +131,8 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
   if (error) throw new Error(error.message);
 
   const chefAlerts = await buildChefAlerts(db, order, priced);
-  return { ...order, chefAlerts };
+  const alertsSent = await dispatchChefAlerts(chefAlerts);
+  return { ...order, chefAlerts, alertsSent };
 }
 
 export type ChefAlert = { category: string; phone: string; text: string };
@@ -164,6 +168,7 @@ async function buildChefAlerts(db: Db, order: any, priced: { id: string; kind: s
       text:
         `New Mealbox91 order (${c.name})\n${where}\n` +
         lines.map((l) => `${l.qty}x ${l.name}${l.note ? ` (${l.note})` : ""}`).join("\n") +
+        `\nDelivery time: ${order.delivery_slot ? order.delivery_slot : "As soon as possible"}` +
         `\nPayment: ${order.payment_method === "upi" ? "Paid via UPI" : "Cash on delivery"}`,
     });
   }
@@ -185,4 +190,34 @@ export async function rewardReferrerIfFirstOrder(db: Db, userId: string) {
     note: "Referral reward",
   });
   await db.from("profiles").update({ referral_rewarded: true }).eq("id", userId);
+}
+
+/**
+ * Automatic WhatsApp dispatch to category chefs.
+ * Uses the WhatsApp Cloud API when credentials are configured; returns false
+ * when no provider is set up so the client can fall back to auto-opening links.
+ */
+export async function dispatchChefAlerts(alerts: ChefAlert[]) {
+  const token = process.env['WHATSAPP_TOKEN'];
+  const phoneId = process.env['WHATSAPP_PHONE_NUMBER_ID'];
+  if (!token || !phoneId || alerts.length === 0) return false;
+  try {
+    await Promise.all(
+      alerts.map((a) =>
+        fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: `91${a.phone}`,
+            type: "text",
+            text: { body: a.text },
+          }),
+        }),
+      ),
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }

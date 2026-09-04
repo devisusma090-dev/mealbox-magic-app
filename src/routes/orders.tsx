@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CheckCircle2, Copy, Gift } from "lucide-react";
+import { CheckCircle2, Copy, Gift, MessageCircle } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,28 +80,48 @@ function OrdersPage() {
             <h2 className="font-display text-lg font-bold">Refer & earn</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Share your code. When your friend completes their first order, you get a discount coupon automatically.
+            Share your personal link with someone new. Your ₹ reward coupon is issued automatically only after that
+            new customer signs up with your code and completes their first order — nothing is claimable before that.
           </p>
           {data?.profile && (
-            <div className="flex items-center gap-2">
-              <Input readOnly value={data.profile.referral_code} className="font-mono font-bold" />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(referralLink);
-                  toast.success("Referral link copied");
-                }}
-              >
-                <Copy className="size-4" />
-              </Button>
+            <div className="space-y-2">
+              <Input readOnly value={referralLink} className="font-mono text-xs" />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralLink);
+                    toast.success("Referral link copied");
+                  }}
+                >
+                  <Copy className="size-4" /> Copy link
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-emerald-500/60 text-emerald-600 dark:text-emerald-400"
+                >
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(
+                      `Order fresh food from Mealbox91! Sign up with my referral code ${data.profile.referral_code}: ${referralLink}`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="size-4" /> Share on WhatsApp
+                  </a>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your code: <span className="font-mono font-bold">{data.profile.referral_code}</span>
+              </p>
             </div>
           )}
 
           {data?.profile && !data.profile.referred_by && (
             <div className="flex gap-2">
               <Input
-                placeholder="Got a friend's code?"
+                placeholder="Have a friend's code? (before your 1st order)"
                 value={refCode}
                 onChange={(e) => setRefCode(e.target.value.toUpperCase())}
               />
@@ -124,7 +144,7 @@ function OrdersPage() {
 
           {data?.coupons && data.coupons.length > 0 && (
             <div className="space-y-1">
-              <p className="text-sm font-semibold">Your reward coupons</p>
+              <p className="text-sm font-semibold">Rewards you have earned</p>
               {data.coupons.map((c) => (
                 <div key={c.id} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
                   <span className="font-mono font-bold">{c.code}</span>
