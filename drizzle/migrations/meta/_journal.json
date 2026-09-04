@@ -22,6 +22,13 @@
       "when": 1788016370451,
       "tag": "0002_order_payment_method",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788507779181,
+      "tag": "0003_add_delivery_slot",
+      "breakpoints": true
     }
   ]
 }

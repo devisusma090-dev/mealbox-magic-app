@@ -188,6 +188,7 @@ export type Database = {
           delivery_fee: number
           delivery_otp: string
           delivery_phone: string | null
+          delivery_slot: string | null
           discount: number
           flat: string | null
           id: string
@@ -214,6 +215,7 @@ export type Database = {
           delivery_fee?: number
           delivery_otp: string
           delivery_phone?: string | null
+          delivery_slot?: string | null
           discount?: number
           flat?: string | null
           id?: string
@@ -240,6 +242,7 @@ export type Database = {
           delivery_fee?: number
           delivery_otp?: string
           delivery_phone?: string | null
+          delivery_slot?: string | null
           discount?: number
           flat?: string | null
           id?: string
