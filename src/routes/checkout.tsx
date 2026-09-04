@@ -196,7 +196,7 @@ function CheckoutPage() {
             </p>
             <p className="mt-6 font-display text-5xl font-extrabold tracking-[0.3em] text-primary">{placed.otp}</p>
             <p className="mt-4 text-sm">
-              {placed.paymentMethod === "upi" ? "Amount paid" : "Pay on delivery"}: <strong>{rupees(placed.total)}</strong>
+              {placed.paymentMethod === "upi" ? "Payment confirmed on delivery" : "Pay on delivery"}: <strong>{rupees(placed.total)}</strong>
             </p>
             {placed.slot && (
               <p className="mt-2 text-sm text-muted-foreground">
@@ -502,7 +502,7 @@ function CheckoutPage() {
             Pay with any UPI app, then confirm below. You'll get a 4-digit delivery OTP.
           </p>
           <Button onClick={() => void submitOrder("upi")} disabled={busy}>
-            {busy ? "Placing order…" : "I have paid — place order"}
+            {busy ? "Placing order…" : "Place order — payment verified on delivery"}
           </Button>
         </DialogContent>
       </Dialog>
