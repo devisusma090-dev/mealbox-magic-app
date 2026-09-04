@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { assertStaffPhone, completeByOtp, loadDeliveryQueue, loadPaymentSettings } from "./delivery.server";
+import { assertStaffPhone, completeByOtp, loadCashSummary, loadDeliveryQueue, loadPaymentSettings } from "./delivery.server";
 
 export const deliveryQueue = createServerFn({ method: "POST" })
   .inputValidator((input: { phone: string }) => ({ phone: String(input.phone ?? "") }))
@@ -7,8 +7,12 @@ export const deliveryQueue = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as never as { from: (t: string) => any };
     const phone = await assertStaffPhone(db, data.phone);
-    const [orders, payment] = await Promise.all([loadDeliveryQueue(db), loadPaymentSettings(db)]);
-    return { phone, orders, payment };
+    const [orders, payment, summary] = await Promise.all([
+      loadDeliveryQueue(db),
+      loadPaymentSettings(db),
+      loadCashSummary(db, phone),
+    ]);
+    return { phone, orders, payment, summary };
   });
 
 export const deliveryMarkOut = createServerFn({ method: "POST" })

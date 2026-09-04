@@ -82,6 +82,7 @@ export type OrderRow = {
   lng?: number | null;
   payment_method?: string | null;
   paid?: boolean | null;
+  delivery_slot?: string | null;
 };
 
 
