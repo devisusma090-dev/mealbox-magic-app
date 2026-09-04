@@ -122,7 +122,9 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
       lng: input.lng ?? null,
       delivery_slot: input.deliverySlot ? input.deliverySlot : null,
       payment_method: input.paymentMethod ?? "cod",
-      paid: input.paymentMethod === "upi",
+      // Payment is never trusted from the client: a UPI order stays unpaid until
+      // staff confirm collection (delivery portal / admin) server-side.
+      paid: false,
       status: "pending",
     })
     .select("*")

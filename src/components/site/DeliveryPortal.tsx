@@ -37,7 +37,9 @@ type QueueOrder = {
 
 export function DeliveryPortal() {
   const [phoneInput, setPhoneInput] = useState("");
+  const [passcodeInput, setPasscodeInput] = useState("");
   const [phone, setPhone] = useState("");
+  const [passcode, setPasscode] = useState("");
   const [otp, setOtp] = useState("");
   const [collect, setCollect] = useState<{ order: QueueOrder; method: "cash" | "upi" } | null>(null);
   const [collectOtp, setCollectOtp] = useState("");
@@ -48,8 +50,9 @@ export function DeliveryPortal() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ["delivery-queue", phone],
-    queryFn: () => runQueue({ data: { phone } }),
-    enabled: phone.length > 0,
+    queryFn: () => runQueue({ data: { phone, passcode } }),
+    enabled: phone.length > 0 && passcode.length > 0,
+    retry: false,
     refetchInterval: 15000,
   });
 
@@ -60,7 +63,7 @@ export function DeliveryPortal() {
     if (event.kind === "new") ding();
   }, phone.length > 0);
 
-  if (!phone) {
+  if (!phone || !passcode) {
     return (
       <div className="space-y-3">
         <div className="space-y-1.5">
@@ -73,7 +76,22 @@ export function DeliveryPortal() {
             onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
           />
         </div>
-        <Button className="w-full" disabled={phoneInput.length !== 10} onClick={() => { primeAudio(); setPhone(phoneInput); }}>
+        <div className="space-y-1.5">
+          <Label htmlFor="staff-passcode">Staff passcode</Label>
+          <Input
+            id="staff-passcode"
+            type="password"
+            autoComplete="off"
+            placeholder="Provided by the admin"
+            value={passcodeInput}
+            onChange={(e) => setPasscodeInput(e.target.value)}
+          />
+        </div>
+        <Button
+          className="w-full"
+          disabled={phoneInput.length !== 10 || passcodeInput.length === 0}
+          onClick={() => { primeAudio(); setPhone(phoneInput); setPasscode(passcodeInput); }}
+        >
           <Bike className="size-4" /> Open delivery queue
         </Button>
       </div>
@@ -84,7 +102,7 @@ export function DeliveryPortal() {
     return (
       <div className="space-y-3 text-sm">
         <p className="text-destructive">{error instanceof Error ? error.message : "Could not open the portal."}</p>
-        <Button variant="outline" onClick={() => setPhone("")}>
+        <Button variant="outline" onClick={() => { setPhone(""); setPasscode(""); setPasscodeInput(""); }}>
           Use another number
         </Button>
       </div>
@@ -112,7 +130,7 @@ export function DeliveryPortal() {
           disabled={otp.length !== 4}
           onClick={async () => {
             try {
-              const res = await runComplete({ data: { phone, otp } });
+              const res = await runComplete({ data: { phone, passcode, otp } });
               toast.success(`Order completed — ${rupees(res.total)}`);
               setOtp("");
               refresh();
@@ -203,7 +221,7 @@ export function DeliveryPortal() {
                     size="sm"
                     onClick={async () => {
                       try {
-                        await runOut({ data: { phone, id: o.id } });
+                        await runOut({ data: { phone, passcode, id: o.id } });
                         refresh();
                       } catch (e) {
                         toast.error(e instanceof Error ? e.message : "Failed");
@@ -282,7 +300,7 @@ export function DeliveryPortal() {
                 disabled={collectOtp.length !== 4}
                 onClick={async () => {
                   try {
-                    const res = await runComplete({ data: { phone, otp: collectOtp, paymentMethod: collect.method } });
+                    const res = await runComplete({ data: { phone, passcode, otp: collectOtp, paymentMethod: collect.method } });
                     toast.success(
                       `${collect.method === "cash" ? "Cash collected" : "UPI received"} — delivered ${rupees(res.total)}`,
                     );
