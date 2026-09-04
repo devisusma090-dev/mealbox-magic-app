@@ -6,7 +6,16 @@ export function normalizePhone(phone: string) {
 
 type Db = { from: (t: string) => any };
 
-export async function assertStaffPhone(db: Db, phone: string) {
+/**
+ * Delivery staff must prove identity with BOTH a shared staff passcode
+ * (server-side secret, never sent to the client) and a phone number that the
+ * admin has explicitly registered. Fails closed when either is missing.
+ */
+export async function assertStaffPhone(db: Db, phone: string, passcode: string) {
+  const expected = process.env["DELIVERY_PASSCODE"];
+  if (!expected) throw new Error("Delivery portal is not configured yet. Ask the admin to set the staff passcode.");
+  if (!passcode || passcode !== expected) throw new Error("Invalid delivery staff passcode.");
+
   const p = normalizePhone(phone);
   if (p.length !== 10) throw new Error("Enter a valid 10-digit phone number.");
   const { data: settings } = await db.from("settings").select("delivery_staff_phones").eq("id", 1).single();
@@ -14,7 +23,10 @@ export async function assertStaffPhone(db: Db, phone: string) {
     .split(/[,\s]+/)
     .map(normalizePhone)
     .filter((x: string) => x.length === 10);
-  if (allow.length > 0 && !allow.includes(p)) {
+  if (allow.length === 0) {
+    throw new Error("No delivery staff numbers are registered. Ask the admin to add yours.");
+  }
+  if (!allow.includes(p)) {
     throw new Error("This number is not registered as delivery staff.");
   }
   return p;
