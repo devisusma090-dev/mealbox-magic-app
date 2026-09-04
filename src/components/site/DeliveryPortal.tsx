@@ -32,6 +32,7 @@ type QueueOrder = {
   lng?: number | null;
   payment_method?: string | null;
   paid?: boolean | null;
+  delivery_slot?: string | null;
 };
 
 export function DeliveryPortal() {
@@ -91,6 +92,7 @@ export function DeliveryPortal() {
   }
 
   const orders = (data?.orders ?? []) as unknown as QueueOrder[];
+  const summary = data?.summary ?? { orders: 0, cash: 0, upi: 0 };
 
   return (
     <div className="space-y-4">
@@ -123,6 +125,24 @@ export function DeliveryPortal() {
         </Button>
       </div>
 
+      <div className="rounded-lg border border-border p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today's cash settlement</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="text-lg font-bold">{rupees(summary.cash)}</p>
+            <p className="text-[11px] text-muted-foreground">Cash collected</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold">{rupees(summary.upi)}</p>
+            <p className="text-[11px] text-muted-foreground">UPI collected</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold">{summary.orders}</p>
+            <p className="text-[11px] text-muted-foreground">Delivered</p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">Live queue · staff {phone}</p>
         <Button size="sm" variant="ghost" onClick={refresh} disabled={isFetching}>
@@ -151,6 +171,7 @@ export function DeliveryPortal() {
                 : o.mode === "eden"
                   ? `Eden Court · Tower ${o.tower ?? "—"}, Flat ${o.flat ?? "—"}`
                   : o.address || "Direct delivery"}
+              {o.delivery_slot ? ` · Deliver at ${o.delivery_slot}` : " · ASAP"}
             </p>
             <ul className="text-muted-foreground">
               {(o.items ?? []).map((l) => (
@@ -205,6 +226,7 @@ export function DeliveryPortal() {
           </DialogHeader>
           {collect && (
             <div className="space-y-4">
+              <p className="text-center font-display text-3xl font-extrabold">{rupees(Number(collect.order.total))}</p>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant={collect.method === "cash" ? "default" : "outline"}
