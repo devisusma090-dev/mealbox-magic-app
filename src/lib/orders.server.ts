@@ -195,31 +195,61 @@ export async function rewardReferrerIfFirstOrder(db: Db, userId: string) {
 }
 
 /**
- * Automatic WhatsApp dispatch to category chefs.
- * Uses the WhatsApp Cloud API when credentials are configured; returns false
- * when no provider is set up so the client can fall back to auto-opening links.
+ * Automatic WhatsApp dispatch to category chefs via the WhatsApp Cloud API.
+ *
+ * Business-initiated messages outside the 24h service window must use an
+ * approved template, so when WHATSAPP_TEMPLATE_NAME is configured we send the
+ * template (one body parameter = the full order text) and fall back to a plain
+ * text message otherwise. Returns true only when every alert was accepted by
+ * Meta, so the client can fall back to auto-opening WhatsApp links.
  */
 export async function dispatchChefAlerts(alerts: ChefAlert[]) {
   const token = process.env['WHATSAPP_TOKEN'];
   const phoneId = process.env['WHATSAPP_PHONE_NUMBER_ID'];
+  const template = process.env['WHATSAPP_TEMPLATE_NAME'];
+  const lang = process.env['WHATSAPP_TEMPLATE_LANG'] || 'en';
   if (!token || !phoneId || alerts.length === 0) return false;
-  try {
-    await Promise.all(
-      alerts.map((a) =>
-        fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: `91${a.phone}`,
-            type: "text",
-            text: { body: a.text },
-          }),
-        }),
-      ),
-    );
-    return true;
-  } catch {
-    return false;
-  }
+
+  const send = async (a: ChefAlert) => {
+    const to = a.phone.length === 10 ? `91${a.phone}` : a.phone;
+    const body = template
+      ? {
+          messaging_product: 'whatsapp',
+          to,
+          type: 'template',
+          template: {
+            name: template,
+            language: { code: lang },
+            components: [
+              {
+                type: 'body',
+                // Cloud API rejects newlines/tabs in template parameters.
+                parameters: [{ type: 'text', text: a.text.replace(/\s*\n\s*/g, ' | ').slice(0, 1000) }],
+              },
+            ],
+          },
+        }
+      : { messaging_product: 'whatsapp', to, type: 'text', text: { body: a.text } };
+
+    try {
+      const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error(`[whatsapp] alert to ${a.category} failed (${res.status}): ${detail.slice(0, 500)}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('[whatsapp] alert dispatch error', err);
+      return false;
+    }
+  };
+
+  const results = await Promise.all(alerts.map(send));
+  return results.every(Boolean);
 }
+
