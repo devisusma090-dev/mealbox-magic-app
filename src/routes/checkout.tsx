@@ -156,10 +156,6 @@ function CheckoutPage() {
       });
       clear();
       setPayOpen(false);
-      const result = order as {
-        chefAlerts?: { category: string; phone: string; text: string }[];
-        alertsSent?: boolean;
-      };
       setPlaced({
         otp: order.delivery_otp,
         total: Number(order.total),
@@ -167,15 +163,8 @@ function CheckoutPage() {
         paymentMethod,
         slot: slotLabel(),
       });
-      // Chef alerts are automatic — never shown as manual buttons to the customer.
-      if (!result.alertsSent) {
-        (result.chefAlerts ?? []).forEach((a, i) => {
-          setTimeout(
-            () => window.open(`https://wa.me/91${a.phone}?text=${encodeURIComponent(a.text)}`, "_blank", "noopener"),
-            i * 400,
-          );
-        });
-      }
+      // Chef WhatsApp alerts stay on staff screens only — the customer screen
+      // just tracks order status, never opens WhatsApp.
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not place order");
     } finally {

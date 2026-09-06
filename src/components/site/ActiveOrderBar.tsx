@@ -45,9 +45,12 @@ export function useActiveOrders() {
  * Sticky "Active Order Status" bar. It stays visible on every customer screen
  * so going back to the menu ("Order more") never hides an ongoing order.
  */
-export function ActiveOrderBar({ offsetBottom = false }: { offsetBottom?: boolean }) {
+export function ActiveOrderBar() {
   const { data: orders } = useActiveOrders();
+  const { count } = useCart();
   const [open, setOpen] = useState(false);
+  // Lift above the sticky cart bar when the customer is building a new order.
+  const offsetBottom = count > 0;
 
   if (!orders || orders.length === 0) return null;
   const latest = orders[0]!;
