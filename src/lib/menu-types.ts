@@ -81,6 +81,9 @@ export type OrderRow = {
   lat?: number | null;
   lng?: number | null;
   payment_method?: string | null;
+  cancel_fee?: number | null;
+  cancelled_by?: string | null;
+  cancel_reason?: string | null;
   paid?: boolean | null;
   delivery_slot?: string | null;
 };

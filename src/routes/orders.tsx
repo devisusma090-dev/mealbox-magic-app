@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { rupees, type CartLine, type Coupon, type OrderRow } from "@/lib/menu-types";
 import { applyReferralCode } from "@/lib/orders.functions";
+import { OrderCancelActions } from "@/components/site/ActiveOrderBar";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/orders")({
@@ -198,6 +199,12 @@ function OrdersPage() {
                 </span>
                 <strong>{rupees(o.total)}</strong>
               </div>
+              {o.status === "cancelled" && Number(o.cancel_fee ?? 0) > 0 && (
+                <p className="text-xs text-destructive">
+                  Cancellation fee charged: {rupees(Number(o.cancel_fee))}
+                </p>
+              )}
+              <OrderCancelActions order={o} />
             </article>
           ))}
         </section>
