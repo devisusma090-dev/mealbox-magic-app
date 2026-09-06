@@ -99,7 +99,7 @@ export function ActiveOrderBar() {
   );
 }
 
-function ActiveOrderCard({ order }: { order: OrderRow }) {
+export function OrderCancelActions({ order, className = "" }: { order: OrderRow; className?: string }) {
   const qc = useQueryClient();
   const cart = useCart();
   const runCancel = useServerFn(cancelMyOrder);
@@ -129,6 +129,41 @@ function ActiveOrderCard({ order }: { order: OrderRow }) {
     }
   };
 
+  if (order.status !== "pending") return null;
+
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-2 gap-2">
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => act("correct")}>
+          Change order · free
+        </Button>
+        <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={() => setConfirm(true)}>
+          <X className="size-4" /> Cancel · {rupees(CANCELLATION_FEE)}
+        </Button>
+      </div>
+
+      <AlertDialog open={confirm} onOpenChange={setConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A {rupees(CANCELLATION_FEE)} security fee is charged for fully cancelling a confirmed order. If you only
+              want to change what you ordered, close this and choose "Change order · free" instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep my order</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={() => act("cancel")}>
+              Cancel and pay {rupees(CANCELLATION_FEE)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function ActiveOrderCard({ order }: { order: OrderRow }) {
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="flex items-center justify-between gap-2">
@@ -149,34 +184,7 @@ function ActiveOrderCard({ order }: { order: OrderRow }) {
         Delivery OTP: <strong className="font-mono tracking-widest">{order.delivery_otp}</strong>
       </p>
 
-      {order.status === "pending" && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => act("correct")}>
-            Change order · free
-          </Button>
-          <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={() => setConfirm(true)}>
-            <X className="size-4" /> Cancel · {rupees(CANCELLATION_FEE)}
-          </Button>
-        </div>
-      )}
-
-      <AlertDialog open={confirm} onOpenChange={setConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A {rupees(CANCELLATION_FEE)} security fee is charged for fully cancelling a confirmed order. If you only
-              want to change what you ordered, close this and choose “Change order · free” instead.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep my order</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={() => act("cancel")}>
-              Cancel and pay {rupees(CANCELLATION_FEE)}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <OrderCancelActions order={order} className="mt-3" />
     </div>
   );
 }
