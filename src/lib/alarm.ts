@@ -65,3 +65,58 @@ export function ding() {
 export function primeAudio() {
   ensureCtx();
 }
+
+let armed = false;
+let pendingAlarm = false;
+let pendingDing = false;
+
+/**
+ * Auto-resume: browsers block audio until the page has been interacted with.
+ * The first pointer/key/touch event resumes the context and immediately plays
+ * anything that was queued while it was suspended, so staff alerts chime
+ * automatically without a manual "enable sound" tap.
+ */
+export function armAudio() {
+  if (armed || typeof window === "undefined") return;
+  armed = true;
+  ensureCtx();
+  const resume = () => {
+    const audio = ensureCtx();
+    if (!audio) return;
+    void audio.resume().then(() => {
+      if (pendingAlarm) {
+        pendingAlarm = false;
+        startAlarm();
+      }
+      if (pendingDing) {
+        pendingDing = false;
+        ding();
+      }
+    });
+  };
+  for (const ev of ["pointerdown", "keydown", "touchstart"] as const) {
+    window.addEventListener(ev, resume, { passive: true });
+  }
+}
+
+/** Plays now when audio is unlocked, otherwise on the next user interaction. */
+export function alertNewOrder() {
+  const audio = ensureCtx();
+  if (!audio || audio.state !== "running") {
+    pendingAlarm = true;
+    armAudio();
+    return;
+  }
+  startAlarm();
+}
+
+export function alertUpdate() {
+  const audio = ensureCtx();
+  if (!audio || audio.state !== "running") {
+    pendingDing = true;
+    armAudio();
+    return;
+  }
+  ding();
+}
+

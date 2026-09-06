@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { deliveryCompleteByOtp, deliveryMarkOut, deliveryQueue } from "@/lib/delivery.functions";
 import { rupees } from "@/lib/menu-types";
 import { useOrderEvents } from "@/lib/live";
-import { ding, primeAudio } from "@/lib/alarm";
+import { alertUpdate, armAudio, primeAudio } from "@/lib/alarm";
 import { mapsUrl } from "@/lib/notify";
 import { upiQrImage } from "@/lib/upi";
 
@@ -60,7 +60,7 @@ export function DeliveryPortal() {
 
   useOrderEvents((event) => {
     refresh();
-    if (event.kind === "new") ding();
+    if (event.kind === "new") alertUpdate();
   }, phone.length > 0);
 
   if (!phone || !passcode) {
@@ -90,7 +90,7 @@ export function DeliveryPortal() {
         <Button
           className="w-full"
           disabled={phoneInput.length !== 10 || passcodeInput.length === 0}
-          onClick={() => { primeAudio(); setPhone(phoneInput); setPasscode(passcodeInput); }}
+          onClick={() => { primeAudio(); armAudio(); setPhone(phoneInput); setPasscode(passcodeInput); }}
         >
           <Bike className="size-4" /> Open delivery queue
         </Button>

@@ -93,7 +93,12 @@ export const adminSetOrderStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!["pending", "out_for_delivery", "completed", "cancelled"].includes(data.status)) throw new Error("Invalid status");
     const db = await adminDb(data.passcode);
-    const { error } = await db.from("orders").update({ status: data.status }).eq("id", data.id);
+    // Staff cancellations never charge the customer.
+    const patch =
+      data.status === "cancelled"
+        ? { status: data.status, cancel_fee: 0, cancelled_by: "admin", cancel_reason: "staff_cancelled" }
+        : { status: data.status };
+    const { error } = await db.from("orders").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     if (data.status === "completed") {
       const { data: order } = await db.from("orders").select("user_id").eq("id", data.id).maybeSingle();

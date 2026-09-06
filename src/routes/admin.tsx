@@ -23,7 +23,7 @@ import {
 import { getAdminPasscode, clearAdminPasscode } from "@/lib/admin-session";
 import { ImageCropUpload } from "@/components/site/ImageCropUpload";
 import { useOrderEvents } from "@/lib/live";
-import { ding, primeAudio, startAlarm, stopAlarm } from "@/lib/alarm";
+import { alertNewOrder, alertUpdate, armAudio, primeAudio, stopAlarm } from "@/lib/alarm";
 import { mapsUrl, pushNotify, requestNotificationPermission } from "@/lib/notify";
 import { rupees, type Addon, type Category, type Coupon, type MenuItem, type OrderRow, type Settings } from "@/lib/menu-types";
 
@@ -82,6 +82,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
 
   useEffect(() => {
     primeAudio();
+    armAudio();
     void requestNotificationPermission();
     return () => stopAlarm();
   }, []);
@@ -89,11 +90,11 @@ function AdminBoard({ passcode }: { passcode: string }) {
   useOrderEvents((event) => {
     refresh();
     if (event.kind === "new") {
-      startAlarm();
+      alertNewOrder();
       setAlarming(true);
       pushNotify("New order", "A new order just came in.", event.order_id);
     } else if (event.status === "completed") {
-      ding();
+      alertUpdate();
       pushNotify("Order delivered", "An order was completed with OTP.", event.order_id);
     }
   });
@@ -229,16 +230,21 @@ function AdminBoard({ passcode }: { passcode: string }) {
                         </Button>
                       )}
                       <ChefAlerts order={o} items={items} categories={categories} />
-                      {o.status === "pending" && (
-
+                      {o.status !== "completed" && o.status !== "cancelled" && (
                         <div className="flex gap-2">
                           <Button size="sm" onClick={async () => { await setStatus({ data: { passcode, id: o.id, status: "completed" } }); refresh(); }}>
                             Complete
                           </Button>
                           <Button size="sm" variant="outline" onClick={async () => { await setStatus({ data: { passcode, id: o.id, status: "cancelled" } }); refresh(); }}>
-                            Cancel
+                            Cancel (no charge)
                           </Button>
                         </div>
+                      )}
+                      {o.status === "cancelled" && (
+                        <p className="text-xs text-muted-foreground">
+                          Cancelled by {o.cancelled_by === "customer" ? "customer" : "staff"}
+                          {Number(o.cancel_fee ?? 0) > 0 ? ` · ${rupees(Number(o.cancel_fee))} fee charged` : " · no charge"}
+                        </p>
                       )}
                     </CardContent>
                   </Card>
