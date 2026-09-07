@@ -43,6 +43,13 @@
       "when": 1788708452130,
       "tag": "0005_order_cancellation_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788769400141,
+      "tag": "0006_realtime_menu_and_staff_settings",
+      "breakpoints": true
     }
   ]
 }

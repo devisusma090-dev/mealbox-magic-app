@@ -15,9 +15,10 @@ type Props = {
   isVeg?: boolean;
   available?: boolean;
   disabled?: boolean;
+  imageUrl?: string | null;
 };
 
-export function MenuItemRow({ id, kind, name, description, price, isVeg, available = true, disabled }: Props) {
+export function MenuItemRow({ id, kind, name, description, price, isVeg, available = true, disabled, imageUrl }: Props) {
   const { lines, add, setQty, setNote } = useCart();
   const line = lines.find((l) => l.key === `${kind}:${id}`);
   const [showNote, setShowNote] = useState(false);
@@ -25,6 +26,19 @@ export function MenuItemRow({ id, kind, name, description, price, isVeg, availab
   return (
     <article className="surface-card flex flex-col gap-3 p-4">
       <div className="flex items-start gap-3">
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt={name}
+            loading="lazy"
+            width={80}
+            height={80}
+            className="size-20 shrink-0 rounded-lg object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {typeof isVeg === "boolean" && (

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type OrderEvent = {
@@ -33,4 +34,31 @@ export function useOrderEvents(onEvent: (event: OrderEvent) => void, enabled = t
       void supabase.removeChannel(channel);
     };
   }, [enabled]);
+}
+
+/**
+ * Keeps the customer menu and store settings in sync with admin edits in real
+ * time — a photo, price or availability change appears without a reload.
+ */
+export function useMenuRealtime() {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const invalidate = () => {
+      void qc.invalidateQueries({ queryKey: ["menu"] });
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    };
+    const channel = supabase
+      .channel(`store-live-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "addons" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, invalidate)
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
 }

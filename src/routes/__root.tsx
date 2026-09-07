@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "@/lib/cart";
 import { ActiveOrderBar } from "@/components/site/ActiveOrderBar";
 import { Toaster } from "@/components/ui/sonner";
+import { useMenuRealtime } from "@/lib/live";
 
 function NotFoundComponent() {
   return (
@@ -121,6 +122,11 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function LiveSync() {
+  useMenuRealtime();
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -129,6 +135,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <LiveSync />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         {!staffScreen && <ActiveOrderBar />}
