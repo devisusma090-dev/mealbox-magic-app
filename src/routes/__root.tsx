@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "@/lib/cart";
 import { ActiveOrderBar } from "@/components/site/ActiveOrderBar";
 import { Toaster } from "@/components/ui/sonner";
+import { useMenuRealtime } from "@/lib/live";
 
 function NotFoundComponent() {
   return (
