@@ -117,6 +117,7 @@ function MenuPage() {
                     name={item.name}
                     description={item.description}
                     price={Number(item.price)}
+                    imageUrl={item.image_url}
                     isVeg={item.is_veg}
                     available={item.available}
                     disabled={!!closed}
