@@ -319,8 +319,10 @@ export type Database = {
           eden_offline_reason: string
           id: number
           offline_reason: string
+          onesignal_app_id: string
           referral_amount: number
           restaurant_open: boolean
+          staff_contact_phones: string
           updated_at: string
           upi_id: string | null
           upi_qr_url: string | null
@@ -338,8 +340,10 @@ export type Database = {
           eden_offline_reason?: string
           id?: number
           offline_reason?: string
+          onesignal_app_id?: string
           referral_amount?: number
           restaurant_open?: boolean
+          staff_contact_phones?: string
           updated_at?: string
           upi_id?: string | null
           upi_qr_url?: string | null
@@ -357,8 +361,10 @@ export type Database = {
           eden_offline_reason?: string
           id?: number
           offline_reason?: string
+          onesignal_app_id?: string
           referral_amount?: number
           restaurant_open?: boolean
+          staff_contact_phones?: string
           updated_at?: string
           upi_id?: string | null
           upi_qr_url?: string | null
