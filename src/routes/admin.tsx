@@ -24,6 +24,7 @@ import { getAdminPasscode, clearAdminPasscode } from "@/lib/admin-session";
 import { ImageCropUpload } from "@/components/site/ImageCropUpload";
 import { useOrderEvents } from "@/lib/live";
 import { alertNewOrder, alertUpdate, armAudio, primeAudio, stopAlarm } from "@/lib/alarm";
+import { isSubscribed, subscribeToOrderAlerts, unsubscribeFromOrderAlerts } from "@/lib/onesignal";
 import { mapsUrl, pushNotify, requestNotificationPermission } from "@/lib/notify";
 import { rupees, type Addon, type Category, type Coupon, type MenuItem, type OrderRow, type Settings } from "@/lib/menu-types";
 
@@ -151,6 +152,7 @@ function AdminBoard({ passcode }: { passcode: string }) {
                 <BellRing className="size-4" /> Acknowledge new order
               </Button>
             )}
+            <PushAlertsToggle appId={settings?.onesignal_app_id ?? ""} />
             <Button variant="outline" size="sm" onClick={() => { clearAdminPasscode(); window.location.href = "/"; }}>
               Sign out
             </Button>
@@ -724,6 +726,40 @@ function NewCoupon({ onSave }: { onSave: (row: Record<string, unknown>) => void 
   );
 }
 
+function PushAlertsToggle({ appId }: { appId: string }) {
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!appId) return;
+    void isSubscribed(appId).then(setOn);
+  }, [appId]);
+
+  if (!appId) return null;
+
+  return (
+    <Button
+      size="sm"
+      variant={on ? "default" : "outline"}
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const next = on ? await unsubscribeFromOrderAlerts(appId) : await subscribeToOrderAlerts(appId);
+          setOn(next);
+          toast.success(next ? "Order alerts ON for this device" : "Order alerts OFF");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Could not change alerts");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <BellRing className="size-4" /> {on ? "Order alerts ON" : "Subscribe to order alerts"}
+    </Button>
+  );
+}
+
 function SettingsForm({ settings, onSave }: { settings: Settings; onSave: (row: Record<string, unknown>) => void }) {
   const [s, setS] = useState(settings);
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => setS((p) => ({ ...p, [k]: v }));
@@ -805,6 +841,28 @@ function SettingsForm({ settings, onSave }: { settings: Settings; onSave: (row: 
             value={s.delivery_staff_phones}
             onChange={(e) => set("delivery_staff_phones", e.target.value)}
             placeholder="9310914628, 9999999999"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">Staff contact numbers (comma separated)</Label>
+          <Textarea
+            rows={2}
+            value={s.staff_contact_phones ?? ""}
+            onChange={(e) => set("staff_contact_phones", e.target.value)}
+            placeholder="9310914628, 9876543210, 9123456780"
+          />
+          <p className="text-xs text-muted-foreground">
+            Shown to staff for coordination. Delivery portal access still needs the staff passcode.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">OneSignal App ID (push notifications)</Label>
+          <Input
+            value={s.onesignal_app_id ?? ""}
+            onChange={(e) => set("onesignal_app_id", e.target.value)}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
           />
         </div>
 
