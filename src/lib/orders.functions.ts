@@ -18,7 +18,11 @@ export const previewCoupon = createServerFn({ method: "POST" })
     subtotal: Number(input.subtotal ?? 0),
   }))
   .handler(async ({ data, context }) => {
-    const { data: coupon } = await context.supabase.from("coupons").select("*").eq("code", data.code).maybeSingle();
+    const { data: coupon } = await context.supabase
+      .from("coupons")
+      .select("id,code,discount_amount,discount_percent,min_order,active,owner_user_id,used,created_at")
+      .eq("code", data.code)
+      .maybeSingle();
     if (!coupon || !coupon.active || coupon.used) throw new Error("Invalid or expired coupon code.");
     if (coupon.owner_user_id && coupon.owner_user_id !== context.userId) throw new Error("This coupon belongs to another account.");
     if (data.subtotal < Number(coupon.min_order)) throw new Error(`Coupon needs a minimum order of ₹${coupon.min_order}.`);
