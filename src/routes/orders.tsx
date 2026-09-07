@@ -40,7 +40,10 @@ function OrdersPage() {
       const [orders, profile, coupons] = await Promise.all([
         supabase.from("orders").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
-        supabase.from("coupons").select("*").eq("owner_user_id", user!.id),
+        supabase
+          .from("coupons")
+          .select("id,code,discount_amount,discount_percent,min_order,active,owner_user_id,used,created_at")
+          .eq("owner_user_id", user!.id),
       ]);
       return {
         orders: (orders.data ?? []) as unknown as OrderRow[],

@@ -87,7 +87,11 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
   let couponCode: string | null = null;
   if (input.couponCode) {
     const code = input.couponCode.trim().toUpperCase();
-    const { data: coupon } = await db.from("coupons").select("*").eq("code", code).maybeSingle();
+    const { data: coupon } = await db
+      .from("coupons")
+      .select("id,code,discount_amount,discount_percent,min_order,active,owner_user_id,used,created_at")
+      .eq("code", code)
+      .maybeSingle();
     if (!coupon || !coupon.active || coupon.used) throw new Error("Invalid or expired coupon code.");
     if (coupon.owner_user_id && coupon.owner_user_id !== userId) throw new Error("This coupon belongs to another account.");
     if (subtotal < Number(coupon.min_order)) throw new Error(`Coupon needs a minimum order of ₹${coupon.min_order}.`);
