@@ -1,4 +1,5 @@
 import { randomOtp } from "./admin.server";
+import { sendStaffPush } from "./push.server";
 
 export type PlaceOrderInput = {
   mode: "table" | "direct" | "eden";
@@ -138,6 +139,18 @@ export async function buildAndInsertOrder(db: Db, userId: string, input: PlaceOr
 
   const chefAlerts = await buildChefAlerts(db, order, priced);
   const alertsSent = await dispatchChefAlerts(chefAlerts);
+
+  const where =
+    order.mode === "table"
+      ? `Table ${order.table_no ?? "-"}`
+      : order.mode === "eden"
+        ? `Eden Court T${order.tower ?? "-"}/${order.flat ?? "-"}`
+        : "Direct delivery";
+  await sendStaffPush(
+    `New order · ₹${Number(order.total).toFixed(0)}`,
+    `${where} · ${priced.reduce((n, l) => n + l.qty, 0)} item(s) · ${order.payment_method === "upi" ? "UPI" : "Cash on delivery"}`,
+  );
+
   return { ...order, chefAlerts, alertsSent };
 }
 
