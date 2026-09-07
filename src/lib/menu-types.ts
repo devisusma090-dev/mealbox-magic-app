@@ -42,6 +42,8 @@ export type Settings = {
   eden_enabled: boolean;
   eden_offline_reason: string;
   delivery_staff_phones: string;
+  staff_contact_phones: string;
+  onesignal_app_id: string;
 };
 
 export type Coupon = {

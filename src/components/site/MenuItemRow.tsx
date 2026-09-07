@@ -15,9 +15,10 @@ type Props = {
   isVeg?: boolean;
   available?: boolean;
   disabled?: boolean;
+  imageUrl?: string | null;
 };
 
-export function MenuItemRow({ id, kind, name, description, price, isVeg, available = true, disabled }: Props) {
+export function MenuItemRow({ id, kind, name, description, price, isVeg, available = true, disabled, imageUrl }: Props) {
   const { lines, add, setQty, setNote } = useCart();
   const line = lines.find((l) => l.key === `${kind}:${id}`);
   const [showNote, setShowNote] = useState(false);
