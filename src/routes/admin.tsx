@@ -269,7 +269,12 @@ function AdminBoard({ passcode }: { passcode: string }) {
                           </a>
                         </Button>
                       )}
-                      <ChefAlerts order={o} items={items} categories={categories} />
+                      <ChefRouter order={o} items={items} categories={categories} chefs={chefs} />
+                      {o.accepted_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Accepted by {o.accepted_by || "staff"} · {new Date(o.accepted_at).toLocaleTimeString()}
+                        </p>
+                      )}
                       {o.status !== "completed" && o.status !== "cancelled" && (
                         <div className="flex gap-2">
                           <Button size="sm" onClick={async () => { await setStatus({ data: { passcode, id: o.id, status: "completed" } }); refresh(); }}>
@@ -422,6 +427,16 @@ function AdminBoard({ passcode }: { passcode: string }) {
             </TabsContent>
 
             <TabsContent value="settings" className="mt-6 space-y-6">
+              <StaffManager
+                staff={staff}
+                onSave={(row) => save("staff_members", row)}
+                onDelete={(id) => del("staff_members", id)}
+              />
+              <ChefManager
+                chefs={chefs}
+                onSave={(row) => save("chefs", row)}
+                onDelete={(id) => del("chefs", id)}
+              />
               {settings && <SettingsForm settings={settings} onSave={(row) => save("settings", { id: 1, ...row })} />}
               <TableQrCard />
             </TabsContent>
