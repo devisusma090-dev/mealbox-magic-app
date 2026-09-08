@@ -50,6 +50,13 @@
       "when": 1788769400141,
       "tag": "0006_realtime_menu_and_staff_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788858659494,
+      "tag": "0007_multi_staff_chefs_and_order_accept",
+      "breakpoints": true
     }
   ]
 }

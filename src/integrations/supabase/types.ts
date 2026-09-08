@@ -65,6 +65,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chefs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean
@@ -180,6 +207,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           address: string | null
           cancel_fee: number
           cancel_reason: string | null
@@ -210,6 +239,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           address?: string | null
           cancel_fee?: number
           cancel_reason?: string | null
@@ -240,6 +271,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           address?: string | null
           cancel_fee?: number
           cancel_reason?: string | null
@@ -370,6 +403,36 @@ export type Database = {
           upi_qr_url?: string | null
           whatsapp_phone?: string
           zomato_url?: string | null
+        }
+        Relationships: []
+      }
+      staff_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          role: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string
+          role?: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          role?: string
+          sort_order?: number
         }
         Relationships: []
       }
