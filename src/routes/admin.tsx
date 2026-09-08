@@ -173,7 +173,10 @@ function AdminBoard({ passcode }: { passcode: string }) {
   const addons = (data?.addons ?? []) as Addon[];
   const coupons = (data?.coupons ?? []) as Coupon[];
   const orders = (data?.orders ?? []) as unknown as OrderRow[];
+  const staff = (data?.staff ?? []) as StaffMember[];
+  const chefs = (data?.chefs ?? []) as Chef[];
   const settings = data?.settings as Settings | undefined;
+  const alarmOrder = orders.find((o) => o.id === alarmOrderId) ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,9 +185,9 @@ function AdminBoard({ passcode }: { passcode: string }) {
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Staff panel</h1>
           <div className="flex gap-2">
-            {alarming && (
-              <Button size="sm" variant="destructive" onClick={() => { stopAlarm(); setAlarming(false); }}>
-                <BellRing className="size-4" /> Acknowledge new order
+            {alarmOrderId && (
+              <Button size="sm" variant="destructive" onClick={() => void silence(true)}>
+                <BellRing className="size-4" /> Accept order
               </Button>
             )}
             <PushAlertsToggle appId={settings?.onesignal_app_id ?? ""} />
