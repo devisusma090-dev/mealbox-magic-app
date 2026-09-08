@@ -13,10 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  adminAcceptOrder,
   adminCompleteByOtp,
   adminDelete,
   adminLoadAll,
+  adminMuteAlarm,
   adminSetOrderStatus,
   adminUpsert,
 } from "@/lib/admin.functions";
@@ -26,7 +29,18 @@ import { useOrderEvents } from "@/lib/live";
 import { alertNewOrder, alertUpdate, armAudio, primeAudio, stopAlarm } from "@/lib/alarm";
 import { isSubscribed, subscribeToOrderAlerts, unsubscribeFromOrderAlerts } from "@/lib/onesignal";
 import { mapsUrl, pushNotify, requestNotificationPermission } from "@/lib/notify";
-import { rupees, type Addon, type Category, type Coupon, type MenuItem, type OrderRow, type Settings } from "@/lib/menu-types";
+import {
+  rupees,
+  STAFF_ROLES,
+  type Addon,
+  type Category,
+  type Chef,
+  type Coupon,
+  type MenuItem,
+  type OrderRow,
+  type Settings,
+  type StaffMember,
+} from "@/lib/menu-types";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -68,6 +82,8 @@ function AdminBoard({ passcode }: { passcode: string }) {
   const remove = useServerFn(adminDelete);
   const completeByOtp = useServerFn(adminCompleteByOtp);
   const setStatus = useServerFn(adminSetOrderStatus);
+  const acceptOrder = useServerFn(adminAcceptOrder);
+  const muteAlarm = useServerFn(adminMuteAlarm);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-all"],
@@ -77,7 +93,9 @@ function AdminBoard({ passcode }: { passcode: string }) {
   });
 
 
-  const [alarming, setAlarming] = useState(false);
+  // Shared alarm: every staff device rings on a new order and goes quiet the
+  // moment anyone accepts or mutes it (broadcast through the live order feed).
+  const [alarmOrderId, setAlarmOrderId] = useState<string | null>(null);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-all"] });
 
@@ -92,13 +110,30 @@ function AdminBoard({ passcode }: { passcode: string }) {
     refresh();
     if (event.kind === "new") {
       alertNewOrder();
-      setAlarming(true);
+      setAlarmOrderId(event.order_id);
       pushNotify("New order", "A new order just came in.", event.order_id);
+    } else if (event.kind === "accepted" || event.kind === "mute") {
+      stopAlarm();
+      setAlarmOrderId((cur) => (cur === event.order_id ? null : cur));
     } else if (event.status === "completed") {
       alertUpdate();
       pushNotify("Order delivered", "An order was completed with OTP.", event.order_id);
     }
   });
+
+  const silence = async (accept: boolean) => {
+    const id = alarmOrderId;
+    stopAlarm();
+    setAlarmOrderId(null);
+    if (!id) return;
+    try {
+      if (accept) await acceptOrder({ data: { passcode, id, by: "Staff panel" } });
+      else await muteAlarm({ data: { passcode, id } });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update the order");
+    }
+  };
 
   const save = async (table: string, row: Record<string, unknown>) => {
     try {
@@ -138,7 +173,10 @@ function AdminBoard({ passcode }: { passcode: string }) {
   const addons = (data?.addons ?? []) as Addon[];
   const coupons = (data?.coupons ?? []) as Coupon[];
   const orders = (data?.orders ?? []) as unknown as OrderRow[];
+  const staff = (data?.staff ?? []) as StaffMember[];
+  const chefs = (data?.chefs ?? []) as Chef[];
   const settings = data?.settings as Settings | undefined;
+  const alarmOrder = orders.find((o) => o.id === alarmOrderId) ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,9 +185,9 @@ function AdminBoard({ passcode }: { passcode: string }) {
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Staff panel</h1>
           <div className="flex gap-2">
-            {alarming && (
-              <Button size="sm" variant="destructive" onClick={() => { stopAlarm(); setAlarming(false); }}>
-                <BellRing className="size-4" /> Acknowledge new order
+            {alarmOrderId && (
+              <Button size="sm" variant="destructive" onClick={() => void silence(true)}>
+                <BellRing className="size-4" /> Accept order
               </Button>
             )}
             <PushAlertsToggle appId={settings?.onesignal_app_id ?? ""} />
@@ -231,7 +269,12 @@ function AdminBoard({ passcode }: { passcode: string }) {
                           </a>
                         </Button>
                       )}
-                      <ChefAlerts order={o} items={items} categories={categories} />
+                      <ChefRouter order={o} items={items} categories={categories} chefs={chefs} />
+                      {o.accepted_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Accepted by {o.accepted_by || "staff"} · {new Date(o.accepted_at).toLocaleTimeString()}
+                        </p>
+                      )}
                       {o.status !== "completed" && o.status !== "cancelled" && (
                         <div className="flex gap-2">
                           <Button size="sm" onClick={async () => { await setStatus({ data: { passcode, id: o.id, status: "completed" } }); refresh(); }}>
@@ -384,6 +427,16 @@ function AdminBoard({ passcode }: { passcode: string }) {
             </TabsContent>
 
             <TabsContent value="settings" className="mt-6 space-y-6">
+              <StaffManager
+                staff={staff}
+                onSave={(row) => save("staff_members", row)}
+                onDelete={(id) => del("staff_members", id)}
+              />
+              <ChefManager
+                chefs={chefs}
+                onSave={(row) => save("chefs", row)}
+                onDelete={(id) => del("chefs", id)}
+              />
               {settings && <SettingsForm settings={settings} onSave={(row) => save("settings", { id: 1, ...row })} />}
               <TableQrCard />
             </TabsContent>
@@ -391,7 +444,164 @@ function AdminBoard({ passcode }: { passcode: string }) {
           </Tabs>
         )}
       </main>
+
+      <Dialog open={!!alarmOrderId} onOpenChange={(v) => { if (!v) void silence(false); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BellRing className="size-5 animate-pulse text-destructive" /> New order!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            {alarmOrder ? (
+              <>
+                <p className="font-display text-3xl font-extrabold">{rupees(alarmOrder.total)}</p>
+                <p className="text-muted-foreground">
+                  {alarmOrder.mode === "table"
+                    ? `Table ${alarmOrder.table_no ?? "—"}`
+                    : alarmOrder.mode === "eden"
+                      ? `Eden Court · Tower ${alarmOrder.tower ?? "—"}, Flat ${alarmOrder.flat ?? "—"}`
+                      : alarmOrder.address || "Direct delivery"}
+                  {alarmOrder.delivery_slot ? ` · Deliver at ${alarmOrder.delivery_slot}` : " · ASAP"}
+                </p>
+                <ul className="text-muted-foreground">
+                  {(alarmOrder.items ?? []).map((l) => (
+                    <li key={l.key}>{l.qty}× {l.name}{l.note ? ` (${l.note})` : ""}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-muted-foreground">A new order just came in.</p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => void silence(true)}>Accept order</Button>
+              <Button variant="outline" onClick={() => void silence(false)}>Mute</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Accepting or muting stops the alarm on every staff device instantly.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function StaffManager({
+  staff,
+  onSave,
+  onDelete,
+}: {
+  staff: StaffMember[];
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Manage staff &amp; admins</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {staff.map((m) => (
+          <StaffRow key={m.id} member={m} onSave={(row) => onSave({ id: m.id, ...row })} onDelete={() => onDelete(m.id)} />
+        ))}
+        <StaffRow key="new-staff" onSave={onSave} />
+        <p className="text-xs text-muted-foreground">
+          Everyone listed here can open the staff panel with the passcode and will hear the new-order alarm on their own phone.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StaffRow({
+  member,
+  onSave,
+  onDelete,
+}: {
+  member?: StaffMember;
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete?: () => void;
+}) {
+  const [name, setName] = useState(member?.name ?? "");
+  const [role, setRole] = useState(member?.role ?? "Manager");
+  const [phone, setPhone] = useState(member?.phone ?? "");
+  const [active, setActive] = useState(member?.active ?? true);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3">
+      <Input className="max-w-44" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <select
+        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
+        {STAFF_ROLES.map((r) => (
+          <option key={r} value={r}>{r}</option>
+        ))}
+      </select>
+      <Input
+        className="w-40"
+        placeholder="Phone"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+      />
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Switch checked={active} onCheckedChange={setActive} /> Active
+      </label>
+      <div className="ml-auto flex gap-2">
+        <Button size="sm" disabled={!name} onClick={() => onSave({ name, role, phone, active })}>
+          {member ? "Save" : "Add"}
+        </Button>
+        {onDelete && (
+          <Button size="icon" variant="ghost" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChefManager({
+  chefs,
+  onSave,
+  onDelete,
+}: {
+  chefs: Chef[];
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Chef numbers (WhatsApp routing)</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {chefs.map((c) => (
+          <RowEditor
+            key={c.id}
+            fields={[
+              { name: "name", value: c.name },
+              { name: "phone", value: c.phone, width: "w-40" },
+              { name: "sort_order", value: String(c.sort_order), type: "number", width: "w-20" },
+            ]}
+            toggle={{ label: "Active", value: c.active }}
+            onSave={(v, t) => onSave({ id: c.id, name: v['name'], phone: v['phone'], sort_order: Number(v['sort_order']), active: t })}
+            onDelete={() => onDelete(c.id)}
+          />
+        ))}
+        <RowEditor
+          key="new-chef"
+          addMode
+          fields={[
+            { name: "name", value: "" },
+            { name: "phone", value: "", width: "w-40" },
+            { name: "sort_order", value: "0", type: "number", width: "w-20" },
+          ]}
+          toggle={{ label: "Active", value: true }}
+          onSave={(v, t) => onSave({ name: v['name'], phone: v['phone'], sort_order: Number(v['sort_order']), active: t })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Example: Tandoori Chef, Chinese Chef, Main Kitchen. Pick one on any order card to send the ready-made WhatsApp message.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 

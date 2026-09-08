@@ -88,6 +88,27 @@ export type OrderRow = {
   cancel_reason?: string | null;
   paid?: boolean | null;
   delivery_slot?: string | null;
+  accepted_at?: string | null;
+  accepted_by?: string | null;
+};
+
+export type StaffMember = {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  active: boolean;
+  sort_order: number;
+};
+
+export const STAFF_ROLES = ["Admin", "Manager", "Kitchen Lead", "Delivery", "Staff"] as const;
+
+export type Chef = {
+  id: string;
+  name: string;
+  phone: string;
+  active: boolean;
+  sort_order: number;
 };
 
 
