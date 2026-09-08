@@ -14,13 +14,15 @@ export const adminLoadAll = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await adminDb(data.passcode);
     try { await db.rpc("purge_old_orders"); } catch { /* ignore */ }
-    const [categories, items, addons, coupons, settings, orders] = await Promise.all([
+    const [categories, items, addons, coupons, settings, orders, staff, chefs] = await Promise.all([
       db.from("categories").select("*").order("sort_order"),
       db.from("menu_items").select("*").order("sort_order"),
       db.from("addons").select("*").order("sort_order"),
       db.from("coupons").select("*").order("created_at", { ascending: false }),
       db.from("settings").select("*").eq("id", 1).single(),
       db.from("orders").select("*").order("created_at", { ascending: false }).limit(500),
+      db.from("staff_members").select("*").order("sort_order"),
+      db.from("chefs").select("*").order("sort_order"),
     ]);
     return {
       categories: categories.data ?? [],
@@ -29,6 +31,8 @@ export const adminLoadAll = createServerFn({ method: "POST" })
       coupons: coupons.data ?? [],
       settings: settings.data,
       orders: orders.data ?? [],
+      staff: staff.data ?? [],
+      chefs: chefs.data ?? [],
     };
   });
 
