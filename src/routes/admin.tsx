@@ -13,10 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  adminAcceptOrder,
   adminCompleteByOtp,
   adminDelete,
   adminLoadAll,
+  adminMuteAlarm,
   adminSetOrderStatus,
   adminUpsert,
 } from "@/lib/admin.functions";
@@ -26,7 +29,18 @@ import { useOrderEvents } from "@/lib/live";
 import { alertNewOrder, alertUpdate, armAudio, primeAudio, stopAlarm } from "@/lib/alarm";
 import { isSubscribed, subscribeToOrderAlerts, unsubscribeFromOrderAlerts } from "@/lib/onesignal";
 import { mapsUrl, pushNotify, requestNotificationPermission } from "@/lib/notify";
-import { rupees, type Addon, type Category, type Coupon, type MenuItem, type OrderRow, type Settings } from "@/lib/menu-types";
+import {
+  rupees,
+  STAFF_ROLES,
+  type Addon,
+  type Category,
+  type Chef,
+  type Coupon,
+  type MenuItem,
+  type OrderRow,
+  type Settings,
+  type StaffMember,
+} from "@/lib/menu-types";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
