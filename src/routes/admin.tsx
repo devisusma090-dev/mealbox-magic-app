@@ -444,7 +444,164 @@ function AdminBoard({ passcode }: { passcode: string }) {
           </Tabs>
         )}
       </main>
+
+      <Dialog open={!!alarmOrderId} onOpenChange={(v) => { if (!v) void silence(false); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BellRing className="size-5 animate-pulse text-destructive" /> New order!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            {alarmOrder ? (
+              <>
+                <p className="font-display text-3xl font-extrabold">{rupees(alarmOrder.total)}</p>
+                <p className="text-muted-foreground">
+                  {alarmOrder.mode === "table"
+                    ? `Table ${alarmOrder.table_no ?? "—"}`
+                    : alarmOrder.mode === "eden"
+                      ? `Eden Court · Tower ${alarmOrder.tower ?? "—"}, Flat ${alarmOrder.flat ?? "—"}`
+                      : alarmOrder.address || "Direct delivery"}
+                  {alarmOrder.delivery_slot ? ` · Deliver at ${alarmOrder.delivery_slot}` : " · ASAP"}
+                </p>
+                <ul className="text-muted-foreground">
+                  {(alarmOrder.items ?? []).map((l) => (
+                    <li key={l.key}>{l.qty}× {l.name}{l.note ? ` (${l.note})` : ""}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-muted-foreground">A new order just came in.</p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => void silence(true)}>Accept order</Button>
+              <Button variant="outline" onClick={() => void silence(false)}>Mute</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Accepting or muting stops the alarm on every staff device instantly.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function StaffManager({
+  staff,
+  onSave,
+  onDelete,
+}: {
+  staff: StaffMember[];
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Manage staff &amp; admins</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {staff.map((m) => (
+          <StaffRow key={m.id} member={m} onSave={(row) => onSave({ id: m.id, ...row })} onDelete={() => onDelete(m.id)} />
+        ))}
+        <StaffRow key="new-staff" onSave={onSave} />
+        <p className="text-xs text-muted-foreground">
+          Everyone listed here can open the staff panel with the passcode and will hear the new-order alarm on their own phone.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StaffRow({
+  member,
+  onSave,
+  onDelete,
+}: {
+  member?: StaffMember;
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete?: () => void;
+}) {
+  const [name, setName] = useState(member?.name ?? "");
+  const [role, setRole] = useState(member?.role ?? "Manager");
+  const [phone, setPhone] = useState(member?.phone ?? "");
+  const [active, setActive] = useState(member?.active ?? true);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3">
+      <Input className="max-w-44" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <select
+        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
+        {STAFF_ROLES.map((r) => (
+          <option key={r} value={r}>{r}</option>
+        ))}
+      </select>
+      <Input
+        className="w-40"
+        placeholder="Phone"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+      />
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Switch checked={active} onCheckedChange={setActive} /> Active
+      </label>
+      <div className="ml-auto flex gap-2">
+        <Button size="sm" disabled={!name} onClick={() => onSave({ name, role, phone, active })}>
+          {member ? "Save" : "Add"}
+        </Button>
+        {onDelete && (
+          <Button size="icon" variant="ghost" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChefManager({
+  chefs,
+  onSave,
+  onDelete,
+}: {
+  chefs: Chef[];
+  onSave: (row: Record<string, unknown>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Chef numbers (WhatsApp routing)</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {chefs.map((c) => (
+          <RowEditor
+            key={c.id}
+            fields={[
+              { name: "name", value: c.name },
+              { name: "phone", value: c.phone, width: "w-40" },
+              { name: "sort_order", value: String(c.sort_order), type: "number", width: "w-20" },
+            ]}
+            toggle={{ label: "Active", value: c.active }}
+            onSave={(v, t) => onSave({ id: c.id, name: v['name'], phone: v['phone'], sort_order: Number(v['sort_order']), active: t })}
+            onDelete={() => onDelete(c.id)}
+          />
+        ))}
+        <RowEditor
+          key="new-chef"
+          addMode
+          fields={[
+            { name: "name", value: "" },
+            { name: "phone", value: "", width: "w-40" },
+            { name: "sort_order", value: "0", type: "number", width: "w-20" },
+          ]}
+          toggle={{ label: "Active", value: true }}
+          onSave={(v, t) => onSave({ name: v['name'], phone: v['phone'], sort_order: Number(v['sort_order']), active: t })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Example: Tandoori Chef, Chinese Chef, Main Kitchen. Pick one on any order card to send the ready-made WhatsApp message.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
