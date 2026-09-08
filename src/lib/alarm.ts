@@ -29,17 +29,31 @@ function siren(audio: AudioContext) {
   osc.stop(now + 1.2);
 }
 
-/** Loud repeating chime that keeps going until `stopAlarm()` is called. */
+function buzz(on: boolean) {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+  try {
+    navigator.vibrate(on ? [400, 200, 400, 200, 400] : 0);
+  } catch {
+    /* unsupported */
+  }
+}
+
+/** Loud repeating chime + phone vibration until `stopAlarm()` is called. */
 export function startAlarm() {
   const audio = ensureCtx();
   if (!audio || loop) return;
   siren(audio);
-  loop = setInterval(() => siren(audio), 1500);
+  buzz(true);
+  loop = setInterval(() => {
+    siren(audio);
+    buzz(true);
+  }, 1500);
 }
 
 export function stopAlarm() {
   if (loop) clearInterval(loop);
   loop = null;
+  buzz(false);
 }
 
 /** One-shot pleasant ding, for non-urgent updates. */
