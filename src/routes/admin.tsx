@@ -82,6 +82,8 @@ function AdminBoard({ passcode }: { passcode: string }) {
   const remove = useServerFn(adminDelete);
   const completeByOtp = useServerFn(adminCompleteByOtp);
   const setStatus = useServerFn(adminSetOrderStatus);
+  const acceptOrder = useServerFn(adminAcceptOrder);
+  const muteAlarm = useServerFn(adminMuteAlarm);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-all"],
@@ -91,7 +93,9 @@ function AdminBoard({ passcode }: { passcode: string }) {
   });
 
 
-  const [alarming, setAlarming] = useState(false);
+  // Shared alarm: every staff device rings on a new order and goes quiet the
+  // moment anyone accepts or mutes it (broadcast through the live order feed).
+  const [alarmOrderId, setAlarmOrderId] = useState<string | null>(null);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-all"] });
 
@@ -106,13 +110,30 @@ function AdminBoard({ passcode }: { passcode: string }) {
     refresh();
     if (event.kind === "new") {
       alertNewOrder();
-      setAlarming(true);
+      setAlarmOrderId(event.order_id);
       pushNotify("New order", "A new order just came in.", event.order_id);
+    } else if (event.kind === "accepted" || event.kind === "mute") {
+      stopAlarm();
+      setAlarmOrderId((cur) => (cur === event.order_id ? null : cur));
     } else if (event.status === "completed") {
       alertUpdate();
       pushNotify("Order delivered", "An order was completed with OTP.", event.order_id);
     }
   });
+
+  const silence = async (accept: boolean) => {
+    const id = alarmOrderId;
+    stopAlarm();
+    setAlarmOrderId(null);
+    if (!id) return;
+    try {
+      if (accept) await acceptOrder({ data: { passcode, id, by: "Staff panel" } });
+      else await muteAlarm({ data: { passcode, id } });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update the order");
+    }
+  };
 
   const save = async (table: string, row: Record<string, unknown>) => {
     try {
