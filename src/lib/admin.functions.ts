@@ -43,7 +43,7 @@ export const adminUpsert = createServerFn({ method: "POST" })
     row: input.row ?? {},
   }))
   .handler(async ({ data }) => {
-    const allowed = ["categories", "menu_items", "addons", "coupons", "settings"];
+    const allowed = ["categories", "menu_items", "addons", "coupons", "settings", "staff_members", "chefs"];
     if (!allowed.includes(data.table)) throw new Error("Unknown table");
     const db = await adminDb(data.passcode);
     const { error } = await db.from(data.table as "categories").upsert(data.row as never);
@@ -58,7 +58,7 @@ export const adminDelete = createServerFn({ method: "POST" })
     id: String(input.id ?? ""),
   }))
   .handler(async ({ data }) => {
-    const allowed = ["categories", "menu_items", "addons", "coupons"];
+    const allowed = ["categories", "menu_items", "addons", "coupons", "staff_members", "chefs"];
     if (!allowed.includes(data.table)) throw new Error("Unknown table");
     const db = await adminDb(data.passcode);
     const { error } = await db.from(data.table as "categories").delete().eq("id", data.id);
@@ -108,5 +108,38 @@ export const adminSetOrderStatus = createServerFn({ method: "POST" })
       const { data: order } = await db.from("orders").select("user_id").eq("id", data.id).maybeSingle();
       if (order?.user_id) await rewardReferrerIfFirstOrder(db as never, order.user_id);
     }
+    return { ok: true };
+  });
+
+/** Any staff device can accept a new order — the alarm then stops everywhere. */
+export const adminAcceptOrder = createServerFn({ method: "POST" })
+  .inputValidator((input: { passcode: string; id: string; by?: string }) => ({
+    passcode: String(input.passcode ?? ""),
+    id: String(input.id ?? ""),
+    by: String(input.by ?? "Staff").slice(0, 60),
+  }))
+  .handler(async ({ data }) => {
+    const db = await adminDb(data.passcode);
+    const { error } = await db
+      .from("orders")
+      .update({ accepted_at: new Date().toISOString(), accepted_by: data.by } as never)
+      .eq("id", data.id)
+      .is("accepted_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Silences the alarm on every staff device without changing the order. */
+export const adminMuteAlarm = createServerFn({ method: "POST" })
+  .inputValidator((input: { passcode: string; id: string }) => ({
+    passcode: String(input.passcode ?? ""),
+    id: String(input.id ?? ""),
+  }))
+  .handler(async ({ data }) => {
+    const db = await adminDb(data.passcode);
+    const { error } = await db
+      .from("order_events")
+      .insert({ order_id: data.id, kind: "mute", status: "muted" } as never);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

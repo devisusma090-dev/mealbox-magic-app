@@ -51,3 +51,29 @@ export const deliveryCompleteByOtp = createServerFn({ method: "POST" })
     const phone = await assertStaffPhone(db, data.phone, data.passcode);
     return completeByOtp(db, data.otp, phone, data.paymentMethod);
   });
+
+/** Delivery staff can also stop the shared new-order alarm on all devices. */
+export const deliveryStopAlarm = createServerFn({ method: "POST" })
+  .inputValidator((input: { phone: string; passcode: string; id: string; accept?: boolean }) => ({
+    phone: String(input.phone ?? ""),
+    passcode: String(input.passcode ?? ""),
+    id: String(input.id ?? ""),
+    accept: Boolean(input.accept),
+  }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as never as { from: (t: string) => any };
+    const phone = await assertStaffPhone(db, data.phone, data.passcode);
+    if (data.accept) {
+      const { error } = await db
+        .from("orders")
+        .update({ accepted_at: new Date().toISOString(), accepted_by: `Delivery ${phone}` })
+        .eq("id", data.id)
+        .is("accepted_at", null);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await db.from("order_events").insert({ order_id: data.id, kind: "mute", status: "muted" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
